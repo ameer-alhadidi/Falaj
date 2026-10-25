@@ -696,72 +696,6 @@ export default function StudioPage() {
             </div>
           )}
 
-          {/* Viewport Selectors */}
-          <div
-            style={{
-              display: 'flex',
-              background: 'var(--portal-surface-elevated)',
-              border: '1px solid var(--portal-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '2px',
-            }}
-          >
-            <button
-              onClick={() => setViewport('desktop')}
-              style={{
-                background: viewport === 'desktop' ? 'var(--portal-accent)' : 'transparent',
-                color: viewport === 'desktop' ? '#fff' : 'var(--portal-text-secondary)',
-                border: 'none',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <Laptop size={14} /> Desktop (12 Col)
-            </button>
-            <button
-              onClick={() => setViewport('tablet')}
-              style={{
-                background: viewport === 'tablet' ? 'var(--portal-accent)' : 'transparent',
-                color: viewport === 'tablet' ? '#fff' : 'var(--portal-text-secondary)',
-                border: 'none',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <Tablet size={14} /> Tablet (768px)
-            </button>
-            <button
-              onClick={() => setViewport('mobile')}
-              style={{
-                background: viewport === 'mobile' ? 'var(--portal-accent)' : 'transparent',
-                color: viewport === 'mobile' ? '#fff' : 'var(--portal-text-secondary)',
-                border: 'none',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <Smartphone size={14} /> Mobile (390px)
-            </button>
-          </div>
-
           {!isPreviewMode && (
             <button
               onClick={() => setShowGrid(!showGrid)}
@@ -2433,6 +2367,121 @@ export default function StudioPage() {
                 }}
               >
                 {selectedNodeId}
+              </div>
+
+              {/* Viewport Selectors inside Component Inspector */}
+              <div style={{ marginTop: '0.85rem' }}>
+                <div
+                  style={{
+                    fontSize: '0.675rem',
+                    fontWeight: 600,
+                    color: 'var(--portal-text-muted)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    marginBottom: '0.35rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span>Viewport Preview</span>
+                  <span
+                    style={{
+                      fontSize: '0.625rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--portal-accent)',
+                    }}
+                  >
+                    {viewport === 'desktop'
+                      ? '12 Col Grid'
+                      : viewport === 'tablet'
+                        ? '768px'
+                        : '390px'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    background: 'var(--portal-surface-elevated)',
+                    border: '1px solid var(--portal-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '2px',
+                    gap: '2px',
+                  }}
+                >
+                  <button
+                    onClick={() => setViewport('desktop')}
+                    title="Desktop (12 Columns)"
+                    style={{
+                      flex: 1,
+                      background: viewport === 'desktop' ? 'var(--portal-accent)' : 'transparent',
+                      color: viewport === 'desktop' ? '#fff' : 'var(--portal-text-secondary)',
+                      border: 'none',
+                      padding: '5px 4px',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.675rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Laptop size={12} />
+                    <span>Desktop (12 Col)</span>
+                  </button>
+                  <button
+                    onClick={() => setViewport('tablet')}
+                    title="Tablet (768px)"
+                    style={{
+                      flex: 1,
+                      background: viewport === 'tablet' ? 'var(--portal-accent)' : 'transparent',
+                      color: viewport === 'tablet' ? '#fff' : 'var(--portal-text-secondary)',
+                      border: 'none',
+                      padding: '5px 4px',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.675rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Tablet size={12} />
+                    <span>Tablet (768px)</span>
+                  </button>
+                  <button
+                    onClick={() => setViewport('mobile')}
+                    title="Mobile (390px)"
+                    style={{
+                      flex: 1,
+                      background: viewport === 'mobile' ? 'var(--portal-accent)' : 'transparent',
+                      color: viewport === 'mobile' ? '#fff' : 'var(--portal-text-secondary)',
+                      border: 'none',
+                      padding: '5px 4px',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.675rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Smartphone size={12} />
+                    <span>Mobile (390px)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
