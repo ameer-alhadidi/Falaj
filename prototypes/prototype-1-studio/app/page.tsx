@@ -152,7 +152,15 @@ const INITIAL_FORM_FIELDS = [
     layout: { colStart: 1, colSpan: 12 },
     props: {
       variant: 'surface',
+      hideSeparator: false,
       allowsMultipleExpanded: false,
+      isDisabled: false,
+      align: 'center',
+      maxWidth: '640px',
+      titleAlign: 'start',
+      dataSource: 'static',
+      apiEndpoint: '/api/accordion-items',
+      dataPath: '$.data',
       items: [
         {
           id: 'item-1',
@@ -211,7 +219,7 @@ export default function StudioPage() {
   const [direction, setDirection] = useState<Direction>('ltr');
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [saveStatus, setSaveStatus] = useState<'Saved' | 'Unsaved changes'>('Saved');
-  const [selectedNodeId, setSelectedNodeId] = useState<string>('node-field-fullname');
+  const [selectedNodeId, setSelectedNodeId] = useState<string>('node-field-compliance-accordion');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties');
 
   // Canvas Top-Level Section Order
@@ -236,6 +244,42 @@ export default function StudioPage() {
     'node-field-security': true,
   });
   const [submittedPreviewData, setSubmittedPreviewData] = useState<any | null>(null);
+
+  // Accordion State Management (Data Source & API Sync)
+  const [accordionApiStatus, setAccordionApiStatus] = useState<string>('');
+  const [accordionJsonDraft, setAccordionJsonDraft] = useState<string>('');
+  const [accordionJsonError, setAccordionJsonError] = useState<string | null>(null);
+
+  const handleFetchAccordionApi = async (fieldId: string, endpoint: string, dataPath?: string) => {
+    setAccordionApiStatus('Loading API data...');
+    try {
+      const res = await fetch(endpoint || '/api/accordion-items');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      let extracted: any = json;
+      if (dataPath) {
+        const cleanPath = dataPath.replace(/^\$\./, '').split('.');
+        for (const p of cleanPath) {
+          if (p && extracted && extracted[p] !== undefined) {
+            extracted = extracted[p];
+          }
+        }
+      }
+      if (Array.isArray(extracted)) {
+        updateNodeProperty('items', extracted);
+        setLiveFormValues((prev) => ({
+          ...prev,
+          [fieldId + '_api_data']: extracted,
+          [fieldId + '_api_status']: `Synced (${extracted.length} items)`,
+        }));
+        setAccordionApiStatus(`Success: ${extracted.length} items loaded`);
+      } else {
+        throw new Error('API response data is not an array of items');
+      }
+    } catch (err: any) {
+      setAccordionApiStatus(`Error: ${err.message}`);
+    }
+  };
 
   // 3-Tier Persona: Administrator Governance State for all 72 components
   const [showAdminGovernanceModal, setShowAdminGovernanceModal] = useState<boolean>(false);
@@ -3028,16 +3072,31 @@ export default function StudioPage() {
                     </div>
                   )}
 
-                  {/* Accordion Specific Properties */}
+                  {/* Accordion Specific Properties & Data Source (HeroUI v3 specification) */}
                   {selectedNode?.type === 'Accordion' && (
                     <div
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.75rem',
+                        gap: '0.85rem',
                         marginTop: '0.25rem',
+                        paddingTop: '0.75rem',
+                        borderTop: '1px solid var(--portal-border)',
                       }}
                     >
+                      <div
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: 'var(--portal-accent)',
+                        }}
+                      >
+                        HeroUI v3 Accordion Settings
+                      </div>
+
+                      {/* Variant */}
                       <div>
                         <label
                           style={{
@@ -3068,27 +3127,501 @@ export default function StudioPage() {
                         </select>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <input
-                          type="checkbox"
-                          id="prop-allows-multiple"
-                          checked={!!selectedNode.props.allowsMultipleExpanded}
-                          onChange={(e) =>
-                            updateNodeProperty('allowsMultipleExpanded', e.target.checked)
-                          }
-                          style={{ cursor: 'pointer' }}
-                        />
+                      {/* Align Control to Center */}
+                      <div>
                         <label
-                          htmlFor="prop-allows-multiple"
                           style={{
                             fontSize: '0.75rem',
                             fontWeight: 600,
-                            color: 'var(--portal-text-primary)',
-                            cursor: 'pointer',
+                            color: 'var(--portal-text-secondary)',
+                            display: 'block',
+                            marginBottom: '0.35rem',
                           }}
                         >
-                          Allow Multiple Expanded Panels
+                          Control Horizontal Alignment
                         </label>
+                        <select
+                          value={selectedNode.props.align || 'stretch'}
+                          onChange={(e) => updateNodeProperty('align', e.target.value)}
+                          style={{
+                            width: '100%',
+                            background: 'var(--portal-surface-elevated)',
+                            border: '1px solid var(--portal-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '6px 8px',
+                            color: 'var(--portal-text-primary)',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          <option value="center">Center Control (Horizontally Centered)</option>
+                          <option value="stretch">Stretch (Full Width)</option>
+                          <option value="start">Start (Align Left)</option>
+                          <option value="end">End (Align Right)</option>
+                        </select>
+                      </div>
+
+                      {/* Max Container Width */}
+                      <div>
+                        <label
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--portal-text-secondary)',
+                            display: 'block',
+                            marginBottom: '0.35rem',
+                          }}
+                        >
+                          Max Container Width
+                        </label>
+                        <select
+                          value={selectedNode.props.maxWidth || '100%'}
+                          onChange={(e) => updateNodeProperty('maxWidth', e.target.value)}
+                          style={{
+                            width: '100%',
+                            background: 'var(--portal-surface-elevated)',
+                            border: '1px solid var(--portal-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '6px 8px',
+                            color: 'var(--portal-text-primary)',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          <option value="100%">100% (Full Width)</option>
+                          <option value="480px">Compact (480px / max-w-md)</option>
+                          <option value="560px">Medium (560px / max-w-lg)</option>
+                          <option value="640px">Standard (640px / max-w-xl)</option>
+                          <option value="768px">Wide (768px)</option>
+                        </select>
+                      </div>
+
+                      {/* Trigger Title Alignment */}
+                      <div>
+                        <label
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--portal-text-secondary)',
+                            display: 'block',
+                            marginBottom: '0.35rem',
+                          }}
+                        >
+                          Trigger Title Alignment
+                        </label>
+                        <select
+                          value={selectedNode.props.titleAlign || 'start'}
+                          onChange={(e) => updateNodeProperty('titleAlign', e.target.value)}
+                          style={{
+                            width: '100%',
+                            background: 'var(--portal-surface-elevated)',
+                            border: '1px solid var(--portal-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '6px 8px',
+                            color: 'var(--portal-text-primary)',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          <option value="start">Start (Left Aligned)</option>
+                          <option value="center">Center (Centered Title)</option>
+                          <option value="end">End (Right Aligned)</option>
+                        </select>
+                      </div>
+
+                      {/* Checkboxes: allowsMultipleExpanded, hideSeparator, isDisabled */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            id="prop-allows-multiple"
+                            checked={!!selectedNode.props.allowsMultipleExpanded}
+                            onChange={(e) =>
+                              updateNodeProperty('allowsMultipleExpanded', e.target.checked)
+                            }
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <label
+                            htmlFor="prop-allows-multiple"
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              color: 'var(--portal-text-primary)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Allow Multiple Expanded Panels
+                          </label>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            id="prop-hide-separator"
+                            checked={!!selectedNode.props.hideSeparator}
+                            onChange={(e) => updateNodeProperty('hideSeparator', e.target.checked)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <label
+                            htmlFor="prop-hide-separator"
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              color: 'var(--portal-text-primary)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Hide Separators Between Items
+                          </label>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            type="checkbox"
+                            id="prop-is-disabled"
+                            checked={!!selectedNode.props.isDisabled}
+                            onChange={(e) => updateNodeProperty('isDisabled', e.target.checked)}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <label
+                            htmlFor="prop-is-disabled"
+                            style={{
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              color: 'var(--portal-text-primary)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Disable Entire Accordion
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* DATA SOURCE: Static JSON vs API Endpoint */}
+                      <div
+                        style={{
+                          marginTop: '0.5rem',
+                          paddingTop: '0.75rem',
+                          borderTop: '1px solid var(--portal-border)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: 'var(--portal-accent)',
+                            marginBottom: '0.5rem',
+                          }}
+                        >
+                          Data Source (Static JSON vs API)
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: '0.75rem' }}>
+                          <button
+                            id="btn-accordion-datasource-static"
+                            type="button"
+                            onClick={() => updateNodeProperty('dataSource', 'static')}
+                            style={{
+                              flex: 1,
+                              padding: '5px 8px',
+                              borderRadius: 'var(--radius-sm)',
+                              border:
+                                '1px solid ' +
+                                ((selectedNode.props.dataSource || 'static') === 'static'
+                                  ? 'var(--portal-accent)'
+                                  : 'var(--portal-border)'),
+                              background:
+                                (selectedNode.props.dataSource || 'static') === 'static'
+                                  ? 'rgba(59, 130, 246, 0.15)'
+                                  : 'var(--portal-surface-elevated)',
+                              color:
+                                (selectedNode.props.dataSource || 'static') === 'static'
+                                  ? 'var(--portal-accent)'
+                                  : 'var(--portal-text-secondary)',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Static JSON
+                          </button>
+                          <button
+                            id="btn-accordion-datasource-api"
+                            type="button"
+                            onClick={() => updateNodeProperty('dataSource', 'api')}
+                            style={{
+                              flex: 1,
+                              padding: '5px 8px',
+                              borderRadius: 'var(--radius-sm)',
+                              border:
+                                '1px solid ' +
+                                (selectedNode.props.dataSource === 'api'
+                                  ? 'var(--portal-accent)'
+                                  : 'var(--portal-border)'),
+                              background:
+                                selectedNode.props.dataSource === 'api'
+                                  ? 'rgba(59, 130, 246, 0.15)'
+                                  : 'var(--portal-surface-elevated)',
+                              color:
+                                selectedNode.props.dataSource === 'api'
+                                  ? 'var(--portal-accent)'
+                                  : 'var(--portal-text-secondary)',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            API Endpoint
+                          </button>
+                        </div>
+
+                        {/* If API Mode */}
+                        {selectedNode.props.dataSource === 'api' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div>
+                              <label
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  color: 'var(--portal-text-secondary)',
+                                  display: 'block',
+                                  marginBottom: '2px',
+                                }}
+                              >
+                                API Endpoint URL
+                              </label>
+                              <input
+                                id="input-accordion-api-endpoint"
+                                type="text"
+                                value={selectedNode.props.apiEndpoint || '/api/accordion-items'}
+                                onChange={(e) => updateNodeProperty('apiEndpoint', e.target.value)}
+                                placeholder="/api/accordion-items"
+                                style={{
+                                  width: '100%',
+                                  background: 'var(--portal-surface-elevated)',
+                                  border: '1px solid var(--portal-border)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  padding: '5px 8px',
+                                  color: 'var(--portal-text-primary)',
+                                  fontSize: '0.75rem',
+                                  fontFamily: 'var(--font-mono)',
+                                }}
+                              />
+                            </div>
+
+                            <div>
+                              <label
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  color: 'var(--portal-text-secondary)',
+                                  display: 'block',
+                                  marginBottom: '2px',
+                                }}
+                              >
+                                JSON Data Path (e.g. $.data)
+                              </label>
+                              <input
+                                id="input-accordion-data-path"
+                                type="text"
+                                value={selectedNode.props.dataPath || '$.data'}
+                                onChange={(e) => updateNodeProperty('dataPath', e.target.value)}
+                                placeholder="$.data"
+                                style={{
+                                  width: '100%',
+                                  background: 'var(--portal-surface-elevated)',
+                                  border: '1px solid var(--portal-border)',
+                                  borderRadius: 'var(--radius-sm)',
+                                  padding: '5px 8px',
+                                  color: 'var(--portal-text-primary)',
+                                  fontSize: '0.75rem',
+                                  fontFamily: 'var(--font-mono)',
+                                }}
+                              />
+                            </div>
+
+                            <button
+                              id="btn-accordion-fetch-api"
+                              type="button"
+                              onClick={() =>
+                                handleFetchAccordionApi(
+                                  selectedNode.id,
+                                  selectedNode.props.apiEndpoint || '/api/accordion-items',
+                                  selectedNode.props.dataPath || '$.data',
+                                )
+                              }
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                background: 'var(--portal-accent)',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '6px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                marginTop: '4px',
+                              }}
+                            >
+                              <Database size={13} /> Fetch API Data Now
+                            </button>
+
+                            {accordionApiStatus && (
+                              <div
+                                style={{
+                                  fontSize: '0.7rem',
+                                  color: accordionApiStatus.startsWith('Error')
+                                    ? 'var(--portal-error)'
+                                    : 'var(--portal-success)',
+                                  marginTop: '2px',
+                                }}
+                              >
+                                {accordionApiStatus}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* If Static JSON Mode */}
+                        {(selectedNode.props.dataSource || 'static') === 'static' && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                              }}
+                            >
+                              <label
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  color: 'var(--portal-text-secondary)',
+                                }}
+                              >
+                                Items JSON (
+                                {Array.isArray(selectedNode.props.items)
+                                  ? selectedNode.props.items.length
+                                  : 0}{' '}
+                                items)
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateNodeProperty('items', [
+                                    {
+                                      id: 'item-1',
+                                      title: 'Security Clearance & Background Check',
+                                      content:
+                                        'Dual-approval required for root access. Background verification logged in audit registry.',
+                                      icon: 'ShieldCheck',
+                                    },
+                                    {
+                                      id: 'item-2',
+                                      title: 'Employment Terms & Compliance Agreement',
+                                      content:
+                                        'Standard enterprise non-disclosure agreement, intellectual property assignment, and automated compliance provisions apply.',
+                                      icon: 'FileText',
+                                    },
+                                    {
+                                      id: 'item-3',
+                                      title: 'Access Roles & Permissions Matrix',
+                                      content:
+                                        'Granular RBAC privileges enforced by OpenPolicyAgent with least-privilege delegation and multi-factor approval requirements.',
+                                      icon: 'Lock',
+                                    },
+                                  ]);
+                                  setAccordionJsonDraft('');
+                                }}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--portal-accent)',
+                                  fontSize: '0.675rem',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                }}
+                              >
+                                Reset Template
+                              </button>
+                            </div>
+
+                            <textarea
+                              rows={6}
+                              value={
+                                accordionJsonDraft !== ''
+                                  ? accordionJsonDraft
+                                  : JSON.stringify(selectedNode.props.items || [], null, 2)
+                              }
+                              onChange={(e) => {
+                                setAccordionJsonDraft(e.target.value);
+                                setAccordionJsonError(null);
+                              }}
+                              style={{
+                                width: '100%',
+                                background: 'var(--portal-surface-elevated)',
+                                border:
+                                  '1px solid ' +
+                                  (accordionJsonError
+                                    ? 'var(--portal-error)'
+                                    : 'var(--portal-border)'),
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '6px',
+                                color: 'var(--portal-text-primary)',
+                                fontSize: '0.7rem',
+                                fontFamily: 'var(--font-mono)',
+                                lineHeight: '1.4',
+                                resize: 'vertical',
+                              }}
+                            />
+
+                            {accordionJsonError && (
+                              <div
+                                style={{
+                                  fontSize: '0.7rem',
+                                  color: 'var(--portal-error)',
+                                }}
+                              >
+                                {accordionJsonError}
+                              </div>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                try {
+                                  const textToParse =
+                                    accordionJsonDraft !== ''
+                                      ? accordionJsonDraft
+                                      : JSON.stringify(selectedNode.props.items || []);
+                                  const parsed = JSON.parse(textToParse);
+                                  if (!Array.isArray(parsed)) {
+                                    throw new Error('Root JSON must be an array of items');
+                                  }
+                                  updateNodeProperty('items', parsed);
+                                  setAccordionJsonDraft(JSON.stringify(parsed, null, 2));
+                                  setAccordionJsonError(null);
+                                } catch (err: any) {
+                                  setAccordionJsonError(err.message);
+                                }
+                              }}
+                              style={{
+                                background: 'var(--portal-surface-hover)',
+                                border: '1px solid var(--portal-border)',
+                                borderRadius: 'var(--radius-sm)',
+                                padding: '5px 8px',
+                                fontSize: '0.725rem',
+                                fontWeight: 600,
+                                color: 'var(--portal-text-primary)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Format & Apply JSON
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -5479,11 +6012,21 @@ function renderHeroUIComponent(
     const isSingleDisclosure = field.type === 'Disclosure';
     const isSurface = (field.props.variant || 'surface') === 'surface';
     const allowsMultiple = isDisclosureGroup || !!field.props.allowsMultipleExpanded;
+    const hideSeparator = !!field.props.hideSeparator;
+    const isDisabled = !!field.props.isDisabled;
+    const align = field.props.align || 'stretch';
+    const maxWidth = field.props.maxWidth || (align === 'center' ? '640px' : '100%');
+    const titleAlign = field.props.titleAlign || 'start';
+    const isApiSource = field.props.dataSource === 'api';
 
-    // Items list with backward compatibility for legacy title/content props
+    // Resolve items: check dynamic API cache first, then field.props.items, then enterprise fallback
+    const apiData = liveFormValues[field.id + '_api_data'];
+    const rawItems =
+      isApiSource && Array.isArray(apiData) && apiData.length > 0 ? apiData : field.props.items;
+
     const accordionItems: Array<{ id: string; title: string; content: string; icon?: string }> =
-      Array.isArray(field.props.items) && field.props.items.length > 0
-        ? field.props.items.map((it: any, idx: number) =>
+      Array.isArray(rawItems) && rawItems.length > 0
+        ? rawItems.map((it: any, idx: number) =>
             typeof it === 'string'
               ? {
                   id: `item-${idx + 1}`,
@@ -5536,6 +6079,7 @@ function renderHeroUIComponent(
         : ['item-1']; // first item expanded initially
 
     const toggleAccordionItem = (itemId: string, e: React.MouseEvent) => {
+      if (isDisabled) return;
       e.stopPropagation();
       const isExpanded = currentExpanded.includes(itemId);
       let nextExpanded: string[];
@@ -5565,115 +6109,221 @@ function renderHeroUIComponent(
       return null;
     };
 
+    const handleSyncApi = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        const endpoint = field.props.apiEndpoint || '/api/accordion-items';
+        const res = await fetch(endpoint);
+        if (res.ok) {
+          const json = await res.json();
+          let data = json;
+          if (field.props.dataPath) {
+            const cleanPath = field.props.dataPath.replace(/^\$\./, '').split('.');
+            for (const p of cleanPath) {
+              if (p && data && data[p] !== undefined) {
+                data = data[p];
+              }
+            }
+          }
+          if (Array.isArray(data)) {
+            setLiveFormValues((prev) => ({
+              ...prev,
+              [field.id + '_api_data']: data,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('API fetch error:', err);
+      }
+    };
+
     return (
       <div
-        className={`accordion ${isSurface ? 'accordion--surface' : ''}`}
         style={{
           width: '100%',
-          background: isSurface ? 'var(--portal-surface)' : 'transparent',
-          border: isSurface ? '1px solid var(--portal-border)' : 'none',
-          borderRadius: isSurface ? 'min(24px, var(--radius-3xl))' : 0,
-          overflow: 'hidden',
-          boxShadow: isSurface ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
+          display: 'flex',
+          justifyContent:
+            align === 'center'
+              ? 'center'
+              : align === 'end'
+                ? 'flex-end'
+                : align === 'start'
+                  ? 'flex-start'
+                  : 'stretch',
         }}
       >
-        {accordionItems.map((item, index) => {
-          const isExpanded = currentExpanded.includes(item.id);
-          const isFirst = index === 0;
-          const isLast = index === accordionItems.length - 1;
-
-          return (
-            <div key={item.id} className="accordion__item" style={{ position: 'relative' }}>
-              {/* Trigger Button */}
+        <div
+          className={`accordion ${isSurface ? 'accordion--surface' : ''}`}
+          style={{
+            width: align === 'stretch' ? '100%' : '100%',
+            maxWidth: maxWidth !== '100%' ? maxWidth : align === 'center' ? '640px' : '100%',
+            marginInline: align === 'center' ? 'auto' : undefined,
+            background: isSurface ? 'var(--portal-surface)' : 'transparent',
+            border: isSurface ? '1px solid var(--portal-border)' : 'none',
+            borderRadius: isSurface ? 'min(24px, var(--radius-3xl))' : 0,
+            overflow: 'hidden',
+            boxShadow: isSurface ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
+            opacity: isDisabled ? 0.5 : 1,
+            pointerEvents: isDisabled ? 'none' : 'auto',
+          }}
+        >
+          {/* API Source Indicator Header (Builder Mode) */}
+          {isApiSource && !isPreviewMode && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 14px',
+                background: 'rgba(59, 130, 246, 0.08)',
+                borderBottom: '1px solid var(--portal-border)',
+                fontSize: '0.675rem',
+                color: 'var(--portal-accent)',
+                fontWeight: 600,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Database size={11} />
+                <span>API Source: {field.props.apiEndpoint || '/api/accordion-items'}</span>
+              </div>
               <button
                 type="button"
-                className="accordion__trigger"
-                onClick={(e) => toggleAccordionItem(item.id, e)}
-                aria-expanded={isExpanded}
+                onClick={handleSyncApi}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  padding: '14px 16px',
-                  background: 'transparent',
+                  background: 'var(--portal-accent)',
+                  color: '#fff',
                   border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '2px 8px',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
-                  textAlign: 'left',
-                  outline: 'none',
-                  transition: 'background-color 150ms ease',
-                  borderTopLeftRadius: isSurface && isFirst ? 'min(24px, var(--radius-3xl))' : 0,
-                  borderTopRightRadius: isSurface && isFirst ? 'min(24px, var(--radius-3xl))' : 0,
-                  borderBottomLeftRadius:
-                    isSurface && isLast && !isExpanded ? 'min(24px, var(--radius-3xl))' : 0,
-                  borderBottomRightRadius:
-                    isSurface && isLast && !isExpanded ? 'min(24px, var(--radius-3xl))' : 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--portal-surface-hover)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {renderAccordionIcon(item.icon)}
-                  <span
-                    style={{
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      color: 'var(--portal-text-primary)',
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {item.title}
-                  </span>
-                </div>
+                Sync API
+              </button>
+            </div>
+          )}
 
-                <div
-                  className="accordion__indicator"
-                  data-expanded={isExpanded}
+          {accordionItems.map((item, index) => {
+            const isExpanded = currentExpanded.includes(item.id);
+            const isFirst = index === 0;
+            const isLast = index === accordionItems.length - 1;
+
+            return (
+              <div key={item.id} className="accordion__item" style={{ position: 'relative' }}>
+                {/* Trigger Button */}
+                <button
+                  type="button"
+                  className="accordion__trigger"
+                  onClick={(e) => toggleAccordionItem(item.id, e)}
+                  aria-expanded={isExpanded}
+                  disabled={isDisabled}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    transform: isExpanded ? 'rotate(-180deg)' : 'rotate(0deg)',
-                    transition: 'transform 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '14px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    outline: 'none',
+                    transition: 'background-color 150ms ease',
+                    borderTopLeftRadius:
+                      isSurface && isFirst && !isApiSource ? 'min(24px, var(--radius-3xl))' : 0,
+                    borderTopRightRadius:
+                      isSurface && isFirst && !isApiSource ? 'min(24px, var(--radius-3xl))' : 0,
+                    borderBottomLeftRadius:
+                      isSurface && isLast && !isExpanded ? 'min(24px, var(--radius-3xl))' : 0,
+                    borderBottomRightRadius:
+                      isSurface && isLast && !isExpanded ? 'min(24px, var(--radius-3xl))' : 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDisabled) {
+                      e.currentTarget.style.backgroundColor = 'var(--portal-surface-hover)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
-                  <ChevronDown size={16} style={{ color: 'var(--portal-text-muted)' }} />
-                </div>
-              </button>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent:
+                        titleAlign === 'center'
+                          ? 'center'
+                          : titleAlign === 'end'
+                            ? 'flex-end'
+                            : 'flex-start',
+                      gap: '10px',
+                      flex: 1,
+                      textAlign: titleAlign as any,
+                    }}
+                  >
+                    {renderAccordionIcon(item.icon)}
+                    <span
+                      style={{
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        color: 'var(--portal-text-primary)',
+                        lineHeight: '1.4',
+                      }}
+                    >
+                      {item.title}
+                    </span>
+                  </div>
 
-              {/* Collapsible Panel Body */}
-              {isExpanded && (
-                <div
-                  className="accordion__panel"
-                  style={{
-                    padding: item.icon ? '0 16px 14px 42px' : '0 16px 14px 16px',
-                    fontSize: '0.825rem',
-                    lineHeight: '1.55',
-                    color: 'var(--portal-text-secondary)',
-                  }}
-                >
-                  <div className="accordion__body-inner">{item.content}</div>
-                </div>
-              )}
+                  <div
+                    className="accordion__indicator"
+                    data-expanded={isExpanded}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transform: isExpanded ? 'rotate(-180deg)' : 'rotate(0deg)',
+                      transition: 'transform 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+                      flexShrink: 0,
+                      marginLeft: '12px',
+                    }}
+                  >
+                    <ChevronDown size={16} style={{ color: 'var(--portal-text-muted)' }} />
+                  </div>
+                </button>
 
-              {/* Item Separator Line */}
-              {!isLast && (
-                <div
-                  style={{
-                    margin: isSurface ? '0 3%' : 0,
-                    width: isSurface ? '94%' : '100%',
-                    height: '1px',
-                    backgroundColor: 'var(--portal-border)',
-                  }}
-                />
-              )}
-            </div>
-          );
-        })}
+                {/* Collapsible Panel Body */}
+                {isExpanded && (
+                  <div
+                    className="accordion__panel"
+                    style={{
+                      padding: item.icon ? '0 16px 14px 42px' : '0 16px 14px 16px',
+                      fontSize: '0.825rem',
+                      lineHeight: '1.55',
+                      color: 'var(--portal-text-secondary)',
+                      textAlign: titleAlign === 'center' ? 'center' : 'start',
+                    }}
+                  >
+                    <div className="accordion__body-inner">{item.content}</div>
+                  </div>
+                )}
+
+                {/* Item Separator Line */}
+                {!hideSeparator && !isLast && (
+                  <div
+                    style={{
+                      margin: isSurface ? '0 3%' : 0,
+                      width: isSurface ? '94%' : '100%',
+                      height: '1px',
+                      backgroundColor: 'var(--portal-border)',
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

@@ -571,7 +571,15 @@ export const COMPLETE_HERO_UI_CATALOG: HeroUIComponentItem[] = [
     desc: 'Vertically stacked collapsible disclosure panels',
     defaultProps: {
       variant: 'surface',
+      hideSeparator: false,
       allowsMultipleExpanded: false,
+      isDisabled: false,
+      align: 'stretch',
+      maxWidth: '100%',
+      titleAlign: 'start',
+      dataSource: 'static',
+      apiEndpoint: '/api/accordion-items',
+      dataPath: '$.data',
       items: [
         {
           id: 'item-1',
