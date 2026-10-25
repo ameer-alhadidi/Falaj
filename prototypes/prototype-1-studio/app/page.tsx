@@ -1656,7 +1656,7 @@ export default function StudioPage() {
                               : '1px solid var(--portal-border)',
                         borderRadius: 'var(--radius-md)',
                         boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-                        overflow: 'hidden',
+                        overflow: 'visible',
                         cursor: isPreviewMode ? 'default' : 'pointer',
                         position: 'relative',
                         transition: 'all 0.2s ease',
@@ -1668,6 +1668,8 @@ export default function StudioPage() {
                           padding: '0.65rem 1rem',
                           background: 'var(--portal-surface)',
                           borderBottom: '1px solid var(--portal-border)',
+                          borderTopLeftRadius: 'calc(var(--radius-md) - 1px)',
+                          borderTopRightRadius: 'calc(var(--radius-md) - 1px)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -1882,6 +1884,11 @@ export default function StudioPage() {
                                   flexDirection: 'column',
                                   gap: '0.4rem',
                                   position: 'relative',
+                                  zIndex: liveFormValues[field.id + '_flyout']
+                                    ? 40
+                                    : isFieldSelected
+                                      ? 3
+                                      : 1,
                                   transition: 'all 0.15s ease',
                                   boxShadow: isDropTarget
                                     ? '0 0 12px rgba(59, 130, 246, 0.3)'
@@ -4397,7 +4404,7 @@ function renderHeroUIComponent(
               position: isInlineCalendar ? 'relative' : 'absolute',
               top: isInlineCalendar ? 'auto' : 'calc(100% + 6px)',
               left: isInlineCalendar ? 'auto' : 0,
-              zIndex: 40,
+              zIndex: 100,
               width: '100%',
               maxWidth: '310px',
               background: 'var(--portal-surface-elevated)',
@@ -4406,7 +4413,7 @@ function renderHeroUIComponent(
               padding: '14px 16px',
               boxShadow: isInlineCalendar
                 ? '0 2px 8px rgba(0, 0, 0, 0.15)'
-                : '0 20px 48px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+                : '0 24px 60px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--portal-border)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
