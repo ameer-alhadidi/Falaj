@@ -146,6 +146,44 @@ const INITIAL_FORM_FIELDS = [
     },
   },
   {
+    id: 'node-field-compliance-accordion',
+    type: 'Accordion',
+    schemaVersion: 1,
+    layout: { colStart: 1, colSpan: 12 },
+    props: {
+      variant: 'surface',
+      allowsMultipleExpanded: false,
+      items: [
+        {
+          id: 'item-1',
+          title: 'Security Clearance & Background Check',
+          content:
+            'Dual-approval required for root access. Background verification logged in audit registry.',
+          icon: 'ShieldCheck',
+        },
+        {
+          id: 'item-2',
+          title: 'Employment Terms & Compliance Agreement',
+          content:
+            'Standard enterprise non-disclosure agreement, intellectual property assignment, and automated compliance provisions apply.',
+          icon: 'FileText',
+        },
+        {
+          id: 'item-3',
+          title: 'Access Roles & Permissions Matrix',
+          content:
+            'Granular RBAC privileges enforced by OpenPolicyAgent with least-privilege delegation and multi-factor approval requirements.',
+          icon: 'Lock',
+        },
+      ],
+    },
+    binding: {
+      field: 'complianceStatus',
+      path: '$.data.employee.compliance',
+      operation: 'POST /api/employees',
+    },
+  },
+  {
     id: 'node-field-submit',
     type: 'Button',
     schemaVersion: 1,
@@ -282,7 +320,8 @@ export default function StudioPage() {
     return null;
   };
 
-  const selectedNode = findNode(pageNodes, selectedNodeId);
+  const selectedNode =
+    findNode(pageNodes, selectedNodeId) || formFields.find((f) => f.id === selectedNodeId) || null;
 
   // Push to Undo Stack Helper
   const pushUndoSnapshot = () => {
@@ -2927,6 +2966,132 @@ export default function StudioPage() {
                       </label>
                     </div>
                   )}
+
+                  {selectedNode?.props?.title !== undefined && (
+                    <div>
+                      <label
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          color: 'var(--portal-text-secondary)',
+                          display: 'block',
+                          marginBottom: '0.35rem',
+                        }}
+                      >
+                        Component Title
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedNode.props.title}
+                        onChange={(e) => updateNodeProperty('title', e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: 'var(--portal-surface-elevated)',
+                          border: '1px solid var(--portal-border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '6px 8px',
+                          color: 'var(--portal-text-primary)',
+                          fontSize: '0.8rem',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {selectedNode?.props?.content !== undefined && (
+                    <div>
+                      <label
+                        style={{
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          color: 'var(--portal-text-secondary)',
+                          display: 'block',
+                          marginBottom: '0.35rem',
+                        }}
+                      >
+                        Body Content
+                      </label>
+                      <textarea
+                        value={selectedNode.props.content}
+                        onChange={(e) => updateNodeProperty('content', e.target.value)}
+                        rows={3}
+                        style={{
+                          width: '100%',
+                          background: 'var(--portal-surface-elevated)',
+                          border: '1px solid var(--portal-border)',
+                          borderRadius: 'var(--radius-sm)',
+                          padding: '6px 8px',
+                          color: 'var(--portal-text-primary)',
+                          fontSize: '0.8rem',
+                          resize: 'vertical',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Accordion Specific Properties */}
+                  {selectedNode?.type === 'Accordion' && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.75rem',
+                        marginTop: '0.25rem',
+                      }}
+                    >
+                      <div>
+                        <label
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--portal-text-secondary)',
+                            display: 'block',
+                            marginBottom: '0.35rem',
+                          }}
+                        >
+                          Accordion Variant
+                        </label>
+                        <select
+                          value={selectedNode.props.variant || 'surface'}
+                          onChange={(e) => updateNodeProperty('variant', e.target.value)}
+                          style={{
+                            width: '100%',
+                            background: 'var(--portal-surface-elevated)',
+                            border: '1px solid var(--portal-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '6px 8px',
+                            color: 'var(--portal-text-primary)',
+                            fontSize: '0.8rem',
+                          }}
+                        >
+                          <option value="surface">Surface (Card Enclosure)</option>
+                          <option value="default">Default (Borderless Separators)</option>
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                          type="checkbox"
+                          id="prop-allows-multiple"
+                          checked={!!selectedNode.props.allowsMultipleExpanded}
+                          onChange={(e) =>
+                            updateNodeProperty('allowsMultipleExpanded', e.target.checked)
+                          }
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <label
+                          htmlFor="prop-allows-multiple"
+                          style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            color: 'var(--portal-text-primary)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Allow Multiple Expanded Panels
+                        </label>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -5303,50 +5468,212 @@ function renderHeroUIComponent(
     );
   }
 
-  // 21. Accordion & Disclosure
+  // 21. Accordion, Disclosure & DisclosureGroup (HeroUI v3 specification)
   if (
     field.type === 'Accordion' ||
     field.type === 'Disclosure' ||
     field.type === 'DisclosureGroup'
   ) {
+    const isAccordion = field.type === 'Accordion';
+    const isDisclosureGroup = field.type === 'DisclosureGroup';
+    const isSingleDisclosure = field.type === 'Disclosure';
+    const isSurface = (field.props.variant || 'surface') === 'surface';
+    const allowsMultiple = isDisclosureGroup || !!field.props.allowsMultipleExpanded;
+
+    // Items list with backward compatibility for legacy title/content props
+    const accordionItems: Array<{ id: string; title: string; content: string; icon?: string }> =
+      Array.isArray(field.props.items) && field.props.items.length > 0
+        ? field.props.items.map((it: any, idx: number) =>
+            typeof it === 'string'
+              ? {
+                  id: `item-${idx + 1}`,
+                  title: it,
+                  content: `Detailed operational parameters for ${it}.`,
+                  icon: 'FileText',
+                }
+              : it,
+          )
+        : isSingleDisclosure
+          ? [
+              {
+                id: 'item-1',
+                title: field.props.title || 'Show Detailed Compliance Guidelines',
+                content:
+                  field.props.content ||
+                  'Standard operating procedures for confidential HR records under ISO 27001.',
+                icon: 'FileText',
+              },
+            ]
+          : [
+              {
+                id: 'item-1',
+                title: field.props.title || 'Security Clearance & Background Check',
+                content:
+                  field.props.content ||
+                  'Dual-approval required for root access. Background verification logged in audit registry.',
+                icon: 'ShieldCheck',
+              },
+              {
+                id: 'item-2',
+                title: 'Employment Terms & Compliance Agreement',
+                content:
+                  'Standard enterprise non-disclosure agreement, intellectual property assignment, and automated compliance provisions apply.',
+                icon: 'FileText',
+              },
+              {
+                id: 'item-3',
+                title: 'Access Roles & Permissions Matrix',
+                content:
+                  'Granular RBAC privileges enforced by OpenPolicyAgent with least-privilege delegation and multi-factor approval requirements.',
+                icon: 'Lock',
+              },
+            ];
+
+    const expandedStateKey = field.id + '_expanded';
+    const currentExpanded: string[] =
+      liveFormValues[expandedStateKey] !== undefined
+        ? (liveFormValues[expandedStateKey] as string[])
+        : ['item-1']; // first item expanded initially
+
+    const toggleAccordionItem = (itemId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const isExpanded = currentExpanded.includes(itemId);
+      let nextExpanded: string[];
+      if (allowsMultiple) {
+        nextExpanded = isExpanded
+          ? currentExpanded.filter((id) => id !== itemId)
+          : [...currentExpanded, itemId];
+      } else {
+        nextExpanded = isExpanded ? [] : [itemId];
+      }
+      setLiveFormValues((prev) => ({
+        ...prev,
+        [expandedStateKey]: nextExpanded,
+      }));
+    };
+
+    const renderAccordionIcon = (iconName?: string) => {
+      if (iconName === 'ShieldCheck') {
+        return <ShieldCheck size={16} style={{ color: 'var(--portal-accent)', flexShrink: 0 }} />;
+      }
+      if (iconName === 'FileText') {
+        return <FileText size={16} style={{ color: 'var(--portal-text-muted)', flexShrink: 0 }} />;
+      }
+      if (iconName === 'Lock') {
+        return <Lock size={16} style={{ color: 'var(--portal-text-muted)', flexShrink: 0 }} />;
+      }
+      return null;
+    };
+
     return (
       <div
+        className={`accordion ${isSurface ? 'accordion--surface' : ''}`}
         style={{
-          background: 'var(--portal-surface-elevated)',
-          border: '1px solid var(--portal-border)',
-          borderRadius: 'var(--radius-sm)',
+          width: '100%',
+          background: isSurface ? 'var(--portal-surface)' : 'transparent',
+          border: isSurface ? '1px solid var(--portal-border)' : 'none',
+          borderRadius: isSurface ? 'min(24px, var(--radius-3xl))' : 0,
           overflow: 'hidden',
+          boxShadow: isSurface ? '0 1px 3px rgba(0, 0, 0, 0.04)' : 'none',
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '8px 12px',
-            background: 'var(--portal-surface)',
-            cursor: 'pointer',
-          }}
-        >
-          <span
-            style={{ fontSize: '0.775rem', fontWeight: 600, color: 'var(--portal-text-primary)' }}
-          >
-            {field.props.title || 'Employment Terms & Policy Disclosure'}
-          </span>
-          <ChevronDown size={14} style={{ color: 'var(--portal-accent)' }} />
-        </div>
-        <div
-          style={{
-            padding: '8px 12px',
-            fontSize: '0.725rem',
-            color: 'var(--portal-text-secondary)',
-            borderTop: '1px solid var(--portal-border)',
-            lineHeight: '1.4',
-          }}
-        >
-          {field.props.content ||
-            'Standard enterprise non-disclosure agreement and automated compliance provisions apply.'}
-        </div>
+        {accordionItems.map((item, index) => {
+          const isExpanded = currentExpanded.includes(item.id);
+          const isFirst = index === 0;
+          const isLast = index === accordionItems.length - 1;
+
+          return (
+            <div key={item.id} className="accordion__item" style={{ position: 'relative' }}>
+              {/* Trigger Button */}
+              <button
+                type="button"
+                className="accordion__trigger"
+                onClick={(e) => toggleAccordionItem(item.id, e)}
+                aria-expanded={isExpanded}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  width: '100%',
+                  padding: '14px 16px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  outline: 'none',
+                  transition: 'background-color 150ms ease',
+                  borderTopLeftRadius: isSurface && isFirst ? 'min(24px, var(--radius-3xl))' : 0,
+                  borderTopRightRadius: isSurface && isFirst ? 'min(24px, var(--radius-3xl))' : 0,
+                  borderBottomLeftRadius:
+                    isSurface && isLast && !isExpanded ? 'min(24px, var(--radius-3xl))' : 0,
+                  borderBottomRightRadius:
+                    isSurface && isLast && !isExpanded ? 'min(24px, var(--radius-3xl))' : 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--portal-surface-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {renderAccordionIcon(item.icon)}
+                  <span
+                    style={{
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      color: 'var(--portal-text-primary)',
+                      lineHeight: '1.4',
+                    }}
+                  >
+                    {item.title}
+                  </span>
+                </div>
+
+                <div
+                  className="accordion__indicator"
+                  data-expanded={isExpanded}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transform: isExpanded ? 'rotate(-180deg)' : 'rotate(0deg)',
+                    transition: 'transform 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                >
+                  <ChevronDown size={16} style={{ color: 'var(--portal-text-muted)' }} />
+                </div>
+              </button>
+
+              {/* Collapsible Panel Body */}
+              {isExpanded && (
+                <div
+                  className="accordion__panel"
+                  style={{
+                    padding: item.icon ? '0 16px 14px 42px' : '0 16px 14px 16px',
+                    fontSize: '0.825rem',
+                    lineHeight: '1.55',
+                    color: 'var(--portal-text-secondary)',
+                  }}
+                >
+                  <div className="accordion__body-inner">{item.content}</div>
+                </div>
+              )}
+
+              {/* Item Separator Line */}
+              {!isLast && (
+                <div
+                  style={{
+                    margin: isSurface ? '0 3%' : 0,
+                    width: isSurface ? '94%' : '100%',
+                    height: '1px',
+                    backgroundColor: 'var(--portal-border)',
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }

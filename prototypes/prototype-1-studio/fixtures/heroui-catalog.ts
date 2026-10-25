@@ -570,9 +570,31 @@ export const COMPLETE_HERO_UI_CATALOG: HeroUIComponentItem[] = [
     icon: ChevronDown,
     desc: 'Vertically stacked collapsible disclosure panels',
     defaultProps: {
-      title: 'Security Clearance & Background Check',
-      content:
-        'Dual-approval required for root access. Background verification logged in audit registry.',
+      variant: 'surface',
+      allowsMultipleExpanded: false,
+      items: [
+        {
+          id: 'item-1',
+          title: 'Security Clearance & Background Check',
+          content:
+            'Dual-approval required for root access. Background verification logged in audit registry.',
+          icon: 'ShieldCheck',
+        },
+        {
+          id: 'item-2',
+          title: 'Employment Terms & Compliance Agreement',
+          content:
+            'Standard enterprise non-disclosure agreement and automated compliance provisions apply.',
+          icon: 'FileText',
+        },
+        {
+          id: 'item-3',
+          title: 'Access Roles & Permissions Matrix',
+          content:
+            'RBAC policies enforced by OpenPolicyAgent with least-privilege delegation and multi-factor approval.',
+          icon: 'Lock',
+        },
+      ],
     },
     defaultBinding: { field: '', path: '', operation: '' },
     defaultLayout: { colSpan: 12 },
