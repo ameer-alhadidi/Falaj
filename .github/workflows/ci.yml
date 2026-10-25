@@ -1,0 +1,57 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  rust-gates:
+    name: Rust Toolchain & Security Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: taiki-e/install-action@nextest
+      - uses: taiki-e/install-action@cargo-audit
+      - uses: taiki-e/install-action@cargo-deny
+
+      - name: Verify Formatting (rustfmt)
+        run: cargo fmt -- --check
+
+      - name: Strict Lints (clippy)
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Unit Tests (nextest)
+        run: cargo nextest run --workspace
+
+      - name: Security Vulnerability Scan (cargo audit)
+        run: cargo audit
+
+      - name: License & Advisory Policy Check (cargo deny)
+        run: cargo deny check
+
+  node-gates:
+    name: Node & TypeScript Gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prettier Code Style Check
+        run: pnpm run format:check
+
+      - name: Build Design System Package
+        run: pnpm run build:packages
