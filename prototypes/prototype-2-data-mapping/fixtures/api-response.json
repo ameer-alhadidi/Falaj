@@ -1,0 +1,71 @@
+{
+  "operationId": "op-core-hr-employees",
+  "endpoint": "GET /api/v1/employees",
+  "response": {
+    "status": "success",
+    "total": 5,
+    "timestamp": "2026-10-25T08:00:00Z",
+    "data": [
+      {
+        "id": 101,
+        "name": "Ahmed Al-Harthy",
+        "department": {
+          "code": "FIN",
+          "name": "Finance",
+          "costCenter": "CC-102"
+        },
+        "jobTitle": "Finance Manager",
+        "email": "ahmed.alharthy@enterprise.com",
+        "active": true
+      },
+      {
+        "id": 102,
+        "name": "Fatima Al-Zahra",
+        "department": {
+          "code": "ENG",
+          "name": "Engineering",
+          "costCenter": "CC-401"
+        },
+        "jobTitle": "Lead Systems Architect",
+        "email": "fatima.alzahra@enterprise.com",
+        "active": true
+      },
+      {
+        "id": 103,
+        "name": "Rashid Al-Nuaimi",
+        "department": {
+          "code": "HR",
+          "name": "Human Resources",
+          "costCenter": "CC-205"
+        },
+        "jobTitle": "People Operations Director",
+        "email": "rashid.nuaimi@enterprise.com",
+        "active": true
+      },
+      {
+        "id": 104,
+        "name": "Mariam Al-Balushi",
+        "department": {
+          "code": "DES",
+          "name": "Product Design",
+          "costCenter": "CC-308"
+        },
+        "jobTitle": "Principal UX Designer",
+        "email": "mariam.balushi@enterprise.com",
+        "active": false
+      },
+      {
+        "id": 105,
+        "name": "Sultan Al-Kindi",
+        "department": {
+          "code": "SEC",
+          "name": "Security & Risk",
+          "costCenter": "CC-901"
+        },
+        "jobTitle": "InfoSec Compliance Officer",
+        "email": "sultan.kindi@enterprise.com",
+        "active": true
+      }
+    ]
+  }
+}

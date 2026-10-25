@@ -1,0 +1,161 @@
+{
+  "projects": [
+    {
+      "id": "proj-hr-portal",
+      "code": "hr-portal",
+      "displayName": "Enterprise HR & People Portal",
+      "description": "Internal workforce directory, department staffing, and talent management.",
+      "themeId": "enterprise-studio",
+      "themeVersion": "1.0.0",
+      "adapter": "shadcn-ui@1.0.0",
+      "framework": "Next.js 15 App Router",
+      "members": [
+        { "name": "Sara Al-Hashimi", "role": "Project Admin", "email": "sara@enterprise.com" },
+        { "name": "Tariq Mansoor", "role": "Developer", "email": "tariq@enterprise.com" }
+      ],
+      "quotas": {
+        "maxPages": 1000,
+        "maxComponentsPerPage": 500,
+        "rateLimitRpm": 600
+      },
+      "allowedAdapters": ["shadcn-ui"],
+      "allowedThemes": ["enterprise-studio"]
+    },
+    {
+      "id": "proj-supply-chain",
+      "code": "supply-chain",
+      "displayName": "Global Logistics & Operations",
+      "description": "Warehousing, inventory tracking, and purchase order fulfillment.",
+      "themeId": "enterprise-studio",
+      "themeVersion": "1.0.0",
+      "adapter": "shadcn-ui@1.0.0",
+      "framework": "Next.js 15 App Router",
+      "members": [
+        { "name": "Sara Al-Hashimi", "role": "Project Admin", "email": "sara@enterprise.com" },
+        { "name": "Khalid Al-Riyami", "role": "Developer", "email": "khalid@enterprise.com" }
+      ],
+      "quotas": {
+        "maxPages": 500,
+        "maxComponentsPerPage": 300,
+        "rateLimitRpm": 400
+      },
+      "allowedAdapters": ["shadcn-ui"],
+      "allowedThemes": ["enterprise-studio"]
+    }
+  ],
+  "apiRegistry": [
+    {
+      "id": "api-core-hr",
+      "name": "Core HR Enterprise API",
+      "baseUrl": "https://hr-upstream.internal.enterprise.com",
+      "authType": "OAuth 2.0 Client Credentials",
+      "credentialStatus": "SET",
+      "keyId": "kms-key-hr-prod-01",
+      "lastRotated": "2026-10-20T14:30:00Z",
+      "timeoutMs": 5000,
+      "maxRetries": 2,
+      "operations": [
+        {
+          "id": "op-emp-dir",
+          "name": "Employee Directory",
+          "method": "GET",
+          "path": "/api/v1/employees",
+          "permission": "employees.read"
+        },
+        {
+          "id": "op-emp-detail",
+          "name": "Employee Profile",
+          "method": "GET",
+          "path": "/api/v1/employees/{id}",
+          "permission": "employees.read"
+        },
+        {
+          "id": "op-dept-list",
+          "name": "Department List",
+          "method": "GET",
+          "path": "/api/v1/departments",
+          "permission": "departments.read"
+        }
+      ]
+    },
+    {
+      "id": "api-erp-orders",
+      "name": "ERP Procurement & Invoices",
+      "baseUrl": "https://erp-upstream.internal.enterprise.com",
+      "authType": "Bearer Token",
+      "credentialStatus": "SET",
+      "keyId": "kms-key-erp-prod-02",
+      "lastRotated": "2026-10-18T09:15:00Z",
+      "timeoutMs": 8000,
+      "maxRetries": 1,
+      "operations": [
+        {
+          "id": "op-orders-list",
+          "name": "Purchase Orders",
+          "method": "GET",
+          "path": "/api/v2/orders",
+          "permission": "orders.read"
+        },
+        {
+          "id": "op-order-create",
+          "name": "Submit Order",
+          "method": "POST",
+          "path": "/api/v2/orders",
+          "permission": "orders.create"
+        }
+      ]
+    }
+  ],
+  "identityContexts": {
+    "builderContext": {
+      "contextName": "Builder Identity (Platform Portal)",
+      "targetAudience": "Admins, Architects, Application Developers",
+      "realm": "platform-management",
+      "issuerUrl": "https://auth.enterprise.com/realms/platform-management",
+      "sessionLifetime": "8 Hours (HttpOnly, SameSite=Lax)",
+      "roles": ["platform_admin", "developer", "viewer"]
+    },
+    "siteVisitorContext": {
+      "contextName": "Site-Visitor Identity (Published Websites)",
+      "targetAudience": "Employees, Department Managers, Customers",
+      "realm": "project-hr-portal-visitors",
+      "issuerUrl": "https://auth.enterprise.com/realms/project-hr-portal-visitors",
+      "sessionLifetime": "1 Hour (HttpOnly, SameSite=Lax)",
+      "claimMapping": {
+        "user_id": "sub",
+        "email": "email",
+        "department": "department_code",
+        "permissions": "resource_access.hr-portal.roles"
+      }
+    }
+  },
+  "auditEvents": [
+    {
+      "id": "aud-1092",
+      "timestamp": "2026-10-25T08:15:22Z",
+      "actor": "sara@enterprise.com (Admin)",
+      "action": "project.restriction.update",
+      "resource": "proj-hr-portal",
+      "details": "Updated max_pages quota to 1000",
+      "ip": "10.120.4.15"
+    },
+    {
+      "id": "aud-1091",
+      "timestamp": "2026-10-25T07:45:10Z",
+      "actor": "tariq@enterprise.com (Developer)",
+      "action": "page.release.publish",
+      "resource": "page-managers-01",
+      "details": "Published Release Manifest #102 for /managers",
+      "ip": "10.120.4.88"
+    },
+    {
+      "id": "aud-1090",
+      "timestamp": "2026-10-24T16:20:05Z",
+      "actor": "sara@enterprise.com (Admin)",
+      "action": "secret.rotate",
+      "resource": "api-core-hr",
+      "details": "Rotated envelope-encrypted data key (KMS ID: kms-key-hr-prod-01)",
+      "ip": "10.120.4.15"
+    }
+  ]
+}

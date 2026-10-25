@@ -1,0 +1,11 @@
+{
+  "targetComponent": "Table",
+  "slots": [
+    { "field": "id", "label": "ID", "format": "text", "required": true },
+    { "field": "name", "label": "Employee Name", "format": "text", "required": true },
+    { "field": "department", "label": "Department Name", "format": "badge", "required": true },
+    { "field": "jobTitle", "label": "Job Title", "format": "text", "required": false },
+    { "field": "email", "label": "Email Address", "format": "text", "required": false },
+    { "field": "active", "label": "Status", "format": "badge", "required": false }
+  ]
+}

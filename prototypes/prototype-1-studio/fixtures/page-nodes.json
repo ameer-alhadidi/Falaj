@@ -1,0 +1,125 @@
+{
+  "pageId": "page-managers-01",
+  "title": "Managers Directory",
+  "route": "/managers",
+  "requiredPermissions": ["managers.read"],
+  "version": 1,
+  "nodes": [
+    {
+      "id": "node-root-container",
+      "type": "Container",
+      "schemaVersion": 1,
+      "layout": {
+        "colStart": 1,
+        "colSpan": 12,
+        "responsive": {
+          "mobile": { "colStart": 1, "colSpan": 12 },
+          "tablet": { "colStart": 1, "colSpan": 12 }
+        }
+      },
+      "props": {
+        "padding": "var(--space-6)",
+        "background": "transparent"
+      },
+      "children": [
+        {
+          "id": "node-page-header",
+          "type": "Section",
+          "schemaVersion": 1,
+          "layout": {
+            "colStart": 1,
+            "colSpan": 12
+          },
+          "props": {
+            "spacing": "var(--space-4)"
+          },
+          "children": [
+            {
+              "id": "node-header-title",
+              "type": "Heading",
+              "schemaVersion": 1,
+              "layout": {
+                "colStart": 1,
+                "colSpan": 8
+              },
+              "props": {
+                "level": 1,
+                "text": "Personnel & Management Directory",
+                "align": "start"
+              }
+            },
+            {
+              "id": "node-header-desc",
+              "type": "Text",
+              "schemaVersion": 1,
+              "layout": {
+                "colStart": 1,
+                "colSpan": 8
+              },
+              "props": {
+                "content": "Live enterprise personnel synchronized via Upstream Core HR Broker. Demonstrates 12-column grid and RFC 9535 data binding.",
+                "variant": "muted"
+              }
+            }
+          ]
+        },
+        {
+          "id": "node-employee-table",
+          "type": "Table",
+          "schemaVersion": 1,
+          "layout": {
+            "colStart": 1,
+            "colSpan": 12,
+            "minHeight": 320,
+            "responsive": {
+              "mobile": { "colSpan": 12 },
+              "tablet": { "colSpan": 12 }
+            }
+          },
+          "visibility": {
+            "requiredPermissions": ["employees.read"]
+          },
+          "binding": {
+            "apiOperationId": "op-emp-directory",
+            "collectionPath": "$.data",
+            "totalPath": "$.total",
+            "fieldMappings": {
+              "id": "@.id",
+              "name": "@.name",
+              "department": "@.department.name",
+              "jobTitle": "@.jobTitle",
+              "email": "@.email",
+              "active": "@.active"
+            }
+          },
+          "props": {
+            "columns": [
+              { "header": "ID", "mappingPath": "@.id", "format": "text", "sortable": true },
+              {
+                "header": "Employee Name",
+                "mappingPath": "@.name",
+                "format": "text",
+                "sortable": true
+              },
+              {
+                "header": "Department",
+                "mappingPath": "@.department.name",
+                "format": "badge",
+                "sortable": true
+              },
+              {
+                "header": "Job Title",
+                "mappingPath": "@.jobTitle",
+                "format": "text",
+                "sortable": false
+              },
+              { "header": "Email", "mappingPath": "@.email", "format": "text", "sortable": false },
+              { "header": "Status", "mappingPath": "@.active", "format": "badge", "sortable": true }
+            ],
+            "emptyText": "No personnel records found for this department."
+          }
+        }
+      ]
+    }
+  ]
+}

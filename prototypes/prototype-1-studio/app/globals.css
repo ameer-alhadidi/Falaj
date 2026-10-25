@@ -1,0 +1,47 @@
+@import '../../../packages/design-system/src/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-latin);
+  background-color: var(--portal-bg);
+  color: var(--portal-text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+[dir='rtl'] body {
+  font-family: var(--font-family-arabic);
+}
+
+/* Studio Layout Dimensions */
+:root {
+  --topbar-height: 52px;
+  --left-panel-width: 280px;
+  --right-inspector-width: 320px;
+  --footer-height: 28px;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--portal-border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--portal-text-muted);
+}

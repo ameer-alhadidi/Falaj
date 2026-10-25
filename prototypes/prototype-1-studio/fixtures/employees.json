@@ -1,0 +1,48 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 101,
+      "name": "Ahmed Al-Harthy",
+      "department": { "name": "Finance", "code": "FIN" },
+      "jobTitle": "Finance Manager",
+      "email": "ahmed.alharthy@enterprise.com",
+      "active": true
+    },
+    {
+      "id": 102,
+      "name": "Fatima Al-Zahra",
+      "department": { "name": "Engineering", "code": "ENG" },
+      "jobTitle": "Lead Systems Architect",
+      "email": "fatima.alzahra@enterprise.com",
+      "active": true
+    },
+    {
+      "id": 103,
+      "name": "Rashid Al-Nuaimi",
+      "department": { "name": "Human Resources", "code": "HR" },
+      "jobTitle": "People Operations Director",
+      "email": "rashid.nuaimi@enterprise.com",
+      "active": true
+    },
+    {
+      "id": 104,
+      "name": "Mariam Al-Balushi",
+      "department": { "name": "Product Design", "code": "DES" },
+      "jobTitle": "Principal UX Designer",
+      "email": "mariam.balushi@enterprise.com",
+      "active": false
+    },
+    {
+      "id": 105,
+      "name": "Sultan Al-Kindi",
+      "department": { "name": "Security & Risk", "code": "SEC" },
+      "jobTitle": "InfoSec Compliance Officer",
+      "email": "sultan.kindi@enterprise.com",
+      "active": true
+    }
+  ],
+  "total": 5,
+  "page": 1,
+  "pageSize": 10
+}

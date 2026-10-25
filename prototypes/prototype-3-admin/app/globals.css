@@ -1,0 +1,28 @@
+@import '../../../packages/design-system/src/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-latin);
+  background-color: var(--portal-bg);
+  color: var(--portal-text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+[dir='rtl'] body {
+  font-family: var(--font-family-arabic);
+}
+
+:root {
+  --topbar-height: 52px;
+  --sidebar-width: 250px;
+}
