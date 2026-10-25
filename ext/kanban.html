@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enterprise Visual Platform — Interactive Kanban Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #090a0f;
+      --surface: #11131b;
+      --surface-elevated: #171b26;
+      --surface-hover: #1f2433;
+      --border: #232938;
+      --border-active: #3b82f6;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border);
+      --card-shadow-hover: 0 8px 30px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--accent);
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-elevated: #ffffff;
+      --surface-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-active: #2563eb;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-glow: rgba(37, 99, 235, 0.2);
+      --success: #059669;
+      --warning: #b45309;
+      --danger: #dc2626;
+      --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px var(--border);
+      --card-shadow-hover: 0 8px 24px rgba(37, 99, 235, 0.12), 0 0 0 1px var(--accent);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.875rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.125rem;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .brand-info h1 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-info p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-box input {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.45rem 0.85rem 0.45rem 2.2rem;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      outline: none;
+      width: 240px;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+      width: 280px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: var(--surface-elevated);
+      padding: 0.25rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+    }
+
+    .pill-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .pill-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .pill-btn.active {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .theme-toggle-btn {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .theme-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Sub-header / Metrics Bar */
+    .metrics-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .metric-stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .stat-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .progress-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 260px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--surface-elevated);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      border-radius: var(--radius-full);
+      transition: width 0.6s ease;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .guide-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .guide-link-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    /* Main Board Container */
+    main.kanban-board {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(290px, 1fr));
+      gap: 1.25rem;
+      overflow-x: auto;
+      align-items: start;
+    }
+
+    /* Column Styles */
+    .kanban-column {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 170px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      transition: var(--transition);
+    }
+
+    .column-header {
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--surface);
+      border-top-left-radius: var(--radius-md);
+      border-top-right-radius: var(--radius-md);
+      z-index: 10;
+    }
+
+    .column-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .col-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+    }
+    .col-dot.backlog { background: #64748b; }
+    .col-dot.ready { background: #3b82f6; }
+    .col-dot.progress { background: #f59e0b; }
+    .col-dot.review { background: #a855f7; }
+    .col-dot.done { background: #10b981; }
+
+    .column-count {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+    }
+
+    .column-cards {
+      padding: 0.875rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* Custom Scrollbar */
+    .column-cards::-webkit-scrollbar {
+      width: 5px;
+    }
+    .column-cards::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: var(--radius-full);
+    }
+
+    /* Task Card Styles */
+    .task-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.875rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      cursor: pointer;
+      box-shadow: var(--card-shadow);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow-hover);
+      border-color: var(--border-active);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .task-id {
+      font-family: var(--font-mono);
+      font-size: 0.725rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .phase-badge {
+      font-size: 0.675rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .phase-p1 { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .phase-0a { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .phase-0b { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .phase-p1-core { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .phase-future { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.35;
+    }
+
+    .card-desc {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.2rem;
+    }
+
+    .tag-chip {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      background: var(--surface);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      padding: 0.1rem 0.35rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 0.5rem;
+      margin-top: 0.2rem;
+    }
+
+    .card-howto-link {
+      font-size: 0.725rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: var(--transition);
+    }
+
+    .card-howto-link:hover {
+      text-decoration: underline;
+    }
+
+    .card-date {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-elevated);
+    }
+
+    .modal-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .modal-close-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .modal-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-deliverables ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .modal-deliverables li {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .modal-deliverables li a {
+      color: var(--accent);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .modal-deliverables li a:hover {
+      text-decoration: underline;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface-elevated);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">V</div>
+      <div class="brand-info">
+        <h1>Visual Platform Kanban</h1>
+        <p>Enterprise Schema-Driven Platform &bull; Phase-Gated Tracker</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Search Box -->
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchInput" placeholder="Search tasks, IDs, tags..." oninput="handleSearch()">
+      </div>
+
+      <!-- Phase Filter Pills -->
+      <div class="filter-pills">
+        <button class="pill-btn active" onclick="setPhaseFilter('all', this)">All</button>
+        <button class="pill-btn" onclick="setPhaseFilter('Phase −1', this)">Phase −1</button>
+        <button class="pill-btn" onclick="setPhaseFilter('Phase 0A', this)">Phase 0A</button>
+        <button class="pill-btn" onclick="setPhaseFilter('Phase 0B', this)">Phase 0B</button>
+        <button class="pill-btn" onclick="setPhaseFilter('Phase 1', this)">Phase 1</button>
+        <button class="pill-btn" onclick="setPhaseFilter('Future', this)">Phase 2–6</button>
+      </div>
+
+      <!-- Theme Switcher Button -->
+      <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+        <svg id="themeIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Metrics & Velocity Bar -->
+  <div class="metrics-bar">
+    <div class="metric-stats">
+      <div class="stat-item">
+        <span class="stat-val" id="totalTasks">30</span>
+        <span class="stat-lbl">Total Tasks</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" style="color: var(--success);" id="doneTasks">11</span>
+        <span class="stat-lbl">Completed</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" style="color: #c084fc;">1</span>
+        <span class="stat-lbl">In Review (0B)</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" style="color: var(--accent);">4</span>
+        <span class="stat-lbl">Ready (P1)</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-val" style="color: var(--text-muted);">14</span>
+        <span class="stat-lbl">Backlog</span>
+      </div>
+    </div>
+
+    <!-- Progress Track -->
+    <div class="progress-bar-container">
+      <div class="stat-lbl" style="width: 75px;">Overall</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width: 37%;"></div>
+      </div>
+      <span class="stat-val" style="font-size: 0.9rem;" id="progressPct">37%</span>
+    </div>
+
+    <!-- Navigation Shortcuts -->
+    <div class="nav-links">
+      <a href="how-to-guide.md" class="guide-link-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        How-To Cookbook
+      </a>
+      <a href="../master-prompt-visual-platform.md" class="guide-link-btn" style="color: var(--text-secondary);">
+        Master Prompt
+      </a>
+    </div>
+  </div>
+
+  <!-- Kanban Columns Container -->
+  <main class="kanban-board" id="board">
+
+    <!-- Column 1: Backlog -->
+    <div class="kanban-column" data-status="backlog">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="col-dot backlog"></span>
+          <span>Backlog</span>
+        </div>
+        <span class="column-count" id="count-backlog">18</span>
+      </div>
+      <div class="column-cards" id="cards-backlog"></div>
+    </div>
+
+    <!-- Column 2: Ready -->
+    <div class="kanban-column" data-status="ready">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="col-dot ready"></span>
+          <span>Ready (Phase 0B)</span>
+        </div>
+        <span class="column-count" id="count-ready">4</span>
+      </div>
+      <div class="column-cards" id="cards-ready"></div>
+    </div>
+
+    <!-- Column 3: In Progress -->
+    <div class="kanban-column" data-status="progress">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="col-dot progress"></span>
+          <span>In Progress</span>
+        </div>
+        <span class="column-count" id="count-progress">0</span>
+      </div>
+      <div class="column-cards" id="cards-progress"></div>
+    </div>
+
+    <!-- Column 4: In Review -->
+    <div class="kanban-column" data-status="review">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="col-dot review"></span>
+          <span>In Review</span>
+        </div>
+        <span class="column-count" id="count-review">1</span>
+      </div>
+      <div class="column-cards" id="cards-review"></div>
+    </div>
+
+    <!-- Column 5: Done -->
+    <div class="kanban-column" data-status="done">
+      <div class="column-header">
+        <div class="column-title">
+          <span class="col-dot done"></span>
+          <span>Done & Verified</span>
+        </div>
+        <span class="column-count" id="count-done">7</span>
+      </div>
+      <div class="column-cards" id="cards-done"></div>
+    </div>
+
+  </main>
+
+  <!-- Modal for Task Details -->
+  <div class="modal-overlay" id="taskModal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="task-id" id="modalTaskId">TSK-001</span>
+          <h2 id="modalTaskTitle">Task Title</h2>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div class="modal-section-title">Overview & Scope</div>
+          <p id="modalTaskDesc" style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;"></p>
+        </div>
+
+        <div>
+          <div class="modal-section-title">Deliverables & Linked Specs</div>
+          <div class="modal-deliverables" id="modalDeliverables"></div>
+        </div>
+
+        <div>
+          <div class="modal-section-title">Task Guidelines Package (Guideline, Example, How-To, Tests)</div>
+          <div id="modalGuidelineLinks" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;"></div>
+        </div>
+
+        <div>
+          <div class="modal-section-title">Tags & Capabilities</div>
+          <div class="card-tags" id="modalTags"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Close</button>
+        <a id="modalHowtoBtn" href="#" class="btn-primary" target="_blank">
+          Open How-To Guide
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Task Database
+    const tasks = [
+      // Done Tasks (Phase −1 and Phase 0A)
+      {
+        id: "TSK-P1-01",
+        phase: "Phase −1",
+        status: "done",
+        title: "Rootless Podman & Socket Setup",
+        desc: "Installed and verified rootless Podman 6.0.2 with podman-compose 1.6.0. Established Windows named pipe (\\\\.\\pipe\\podman-machine-default) for Testcontainers integration.",
+        tags: ["Podman", "Rootless", "Compose", "Socket"],
+        howto: "guidelines/TSK-P1-01/how-to.md",
+        deliverables: ["docs/tooling.md", "docs/outstanding-decisions.md (DEC-001)"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-P1-02",
+        phase: "Phase −1",
+        status: "done",
+        title: "CLI Toolchain Installation & Sweep",
+        desc: "Installed and smoke-tested rustc 1.99, cargo, rustfmt, clippy, cargo-nextest, sqlx-cli, cargo-audit, cargo-deny, Node.js 24, pnpm 11, Playwright 1.64.1.",
+        tags: ["Rust", "Cargo", "SQLx", "Playwright", "Clippy"],
+        howto: "guidelines/TSK-P1-02/how-to.md",
+        deliverables: ["docs/tooling.md", "cargo tools sweep"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-P1-03",
+        phase: "Phase −1",
+        status: "done",
+        title: "Context7 MCP Smoke Testing",
+        desc: "Smoke tested Context7 MCP live API retrieval: resolved /tokio-rs/axum v0.8.4/v0.7.9 and retrieved live router state/handler documentation.",
+        tags: ["MCP", "Context7", "Axum", "Documentation"],
+        howto: "guidelines/TSK-P1-03/how-to.md",
+        deliverables: ["Context7 response verified"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-P1-04",
+        phase: "Phase −1",
+        status: "done",
+        title: "Author 7 Core Project Skills",
+        desc: "Created 7 project skills under .claude/skills/ and mirrored to .agents/skills/: enterprise-studio-tokens, page-schema, security-review, phase-report, podman-dev, arabic-rtl-engineering, wcag-accessibility-audit.",
+        tags: ["Skills", "RTL", "WCAG", "Tokens", "Security"],
+        howto: "guidelines/TSK-P1-04/how-to.md",
+        deliverables: [".claude/skills/*", ".agents/skills/*"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-P1-05",
+        phase: "Phase −1",
+        status: "done",
+        title: "Tooling Inventory & Decisions Log",
+        desc: "Generated docs/tooling.md and initialized docs/outstanding-decisions.md with DEC-001 through DEC-005. Delivered Phase −1 Acceptance Report.",
+        tags: ["ADR", "Tooling", "Decisions", "Governance"],
+        howto: "guidelines/TSK-P1-05/how-to.md",
+        deliverables: ["docs/tooling.md", "docs/outstanding-decisions.md"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-0A-01",
+        phase: "Phase 0A",
+        status: "done",
+        title: "System Blueprints & Core Schemas",
+        desc: "Authored docs/product-requirements.md, docs/architecture.md (Section 4.2 decisions: hybrid rendering, virtual tenancy, domains, zero shared caching), and docs/data-model.md with PostgreSQL schema.",
+        tags: ["Architecture", "DataModel", "Postgres", "Tenancy"],
+        howto: "guidelines/TSK-0A-01/how-to.md",
+        deliverables: ["docs/product-requirements.md", "docs/architecture.md", "docs/data-model.md"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-0A-02",
+        phase: "Phase 0A",
+        status: "done",
+        title: "Security Model & Theme WCAG Audit",
+        desc: "Completed docs/security-model.md (hickory-resolver DNS SSRF, 4 authorization tiers, AES-GCM envelope encryption), docs/page-schema.md (RFC 9535 EBNF), docs/theme-system.md (WCAG 2.2 AA Contrast Audit), docs/adapter-contract.md.",
+        tags: ["Security", "SSRF", "WCAG", "RFC9535", "Theme"],
+        howto: "guidelines/TSK-0A-02/how-to.md",
+        deliverables: ["docs/security-model.md", "docs/page-schema.md", "docs/theme-system.md", "docs/adapter-contract.md"],
+        date: "2026-10-25"
+      },
+
+      // In Review (Phase 0A Approval)
+      {
+        id: "REV-0A",
+        phase: "Phase 0A",
+        status: "review",
+        title: "Phase 0A Acceptance Sign-off",
+        desc: "All 9 design specification documents generated under docs/ and DEC-006 through DEC-012 approved. Awaiting client confirmation to initiate Phase 0B.",
+        tags: ["Signoff", "Review", "Phase0A"],
+        howto: "guidelines/TSK-P1-05/how-to.md",
+        deliverables: ["Phase 0A Acceptance Report", "docs/implementation-roadmap.md"],
+        date: "2026-10-25"
+      },
+
+      {
+        id: "TSK-0B-01",
+        phase: "Phase 0B",
+        status: "done",
+        title: "Prototype 1: Desktop Studio Canvas",
+        desc: "Build Next.js studio app in prototypes/prototype-1-studio: 12-column grid canvas, guide overlays, left sitemap/toolbox, right dynamic property inspector, employee table rendering, theme toggle, and RTL mode.",
+        tags: ["Next.js", "Studio", "12ColumnGrid", "Inspector", "RTL"],
+        howto: "guidelines/TSK-0B-01/how-to.md",
+        deliverables: ["prototypes/prototype-1-studio/ (Port 3001)"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-0B-02",
+        phase: "Phase 0B",
+        status: "done",
+        title: "Prototype 2: API & Data-Binding Matrix",
+        desc: "Build Next.js matrix app in prototypes/prototype-2-data-mapping: visual sanitized JSON tree, connector lines, collection binding ($.data), field mapping (@.department.name), and live row repeater.",
+        tags: ["DataBinding", "JSONTree", "Repeater", "RFC9535"],
+        howto: "guidelines/TSK-0B-02/how-to.md",
+        deliverables: ["prototypes/prototype-2-data-mapping/ (Port 3002)"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-0B-03",
+        phase: "Phase 0B",
+        status: "done",
+        title: "Prototype 3: Admin & Security Gateway",
+        desc: "Build Next.js admin app in prototypes/prototype-3-admin: project creation wizard, theme & adapter version governance, write-only credential vault UI (set/not-set), and audit log feed.",
+        tags: ["Admin", "Security", "Credentials", "Audit"],
+        howto: "guidelines/TSK-0B-03/how-to.md",
+        deliverables: ["prototypes/prototype-3-admin/ (Port 3003)"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-0B-04",
+        phase: "Phase 0B",
+        status: "done",
+        title: "Multi-Theme & RTL Screenshot Harness",
+        desc: "Automate Playwright headless test capturing Desktop (1536x826) and Tablet (768x1024) screenshots in Light and Dark modes, plus Arabic RTL screens for all 3 prototypes.",
+        tags: ["Playwright", "Screenshots", "A11y", "VisualRegression"],
+        howto: "guidelines/TSK-0B-04/how-to.md",
+        deliverables: ["Artifact screenshots & WebP recordings"],
+        date: "2026-10-25"
+      },
+      {
+        id: "REV-0B",
+        phase: "Phase 0B",
+        status: "done",
+        title: "Phase 0B Acceptance Sign-off",
+        desc: "All three prototypes independently runnable with zero errors. Verified across viewports, themes, and RTL Arabic. Evaluation document published.",
+        tags: ["Signoff", "Review", "Phase0B"],
+        howto: "guidelines/TSK-0B-01/how-to.md",
+        deliverables: ["Phase 0B Acceptance Report", "docs/prototypes-evaluation.md"],
+        date: "2026-10-25"
+      },
+
+      // Phase 1 Tasks
+      {
+        id: "TSK-01-01",
+        phase: "Phase 1",
+        status: "done",
+        title: "Monorepo Scaffold & Workspace Setup",
+        desc: "Configure pnpm-workspace.yaml and Cargo workspace monorepo uniting apps/, services/, packages/, and database/.",
+        tags: ["Monorepo", "pnpm", "Cargo", "TypeScript"],
+        howto: "guidelines/TSK-01-01/how-to.md",
+        deliverables: ["pnpm-workspace.yaml", "Cargo.toml", "tsconfig.base.json"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-01-02",
+        phase: "Phase 1",
+        status: "done",
+        title: "Rust Platform API Service Skeleton",
+        desc: "Scaffold services/platform-api using Axum, Tokio, tracing structured JSON logging, and centralized error handling.",
+        tags: ["Rust", "Axum", "Tokio", "Tracing"],
+        howto: "guidelines/TSK-01-02/how-to.md",
+        deliverables: ["services/platform-api/"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-01-03",
+        phase: "Phase 1",
+        status: "done",
+        title: "PostgreSQL Database Migrations & SQLx",
+        desc: "Write initial SQLx migrations under database/migrations/ implementing users, projects, sitemaps, versioned pages, and audit logs.",
+        tags: ["PostgreSQL", "SQLx", "Migrations"],
+        howto: "guidelines/TSK-01-03/how-to.md",
+        deliverables: ["database/migrations/"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-01-04",
+        phase: "Phase 1",
+        status: "done",
+        title: "Enterprise Studio Design System Package",
+        desc: "Scaffold packages/design-system with compiled CSS tokens, Tailwind plugin, and zero-hardcoded-colors verification rules.",
+        tags: ["DesignSystem", "Tokens", "Tailwind"],
+        howto: "guidelines/TSK-01-04/how-to.md",
+        deliverables: ["packages/design-system/"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-01-05",
+        phase: "Phase 1",
+        status: "done",
+        title: "Rootless Podman Compose Stack",
+        desc: "Author compose.yaml and Containerfiles for API, PostgreSQL 18, and Keycloak 26.7 running rootless with volume labels.",
+        tags: ["Podman", "Compose", "Containerfile"],
+        howto: "guidelines/TSK-01-05/how-to.md",
+        deliverables: ["compose.yaml", "containers/"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-01-06",
+        phase: "Phase 1",
+        status: "done",
+        title: "CI Pipeline on Podman",
+        desc: "Establish CI workflow checking clippy, cargo-nextest, cargo-audit, cargo-deny, prettier, and eslint.",
+        tags: ["CI", "GitHubActions", "Podman"],
+        howto: "guidelines/TSK-01-06/how-to.md",
+        deliverables: [".github/workflows/ci.yml"],
+        date: "2026-10-25"
+      },
+      {
+        id: "REV-01",
+        phase: "Phase 1",
+        status: "review",
+        title: "Phase 1 Foundation Acceptance Sign-off",
+        desc: "Monorepo workspace, Rust platform API service, 4 database migrations, compose stack, and CI pipeline verified with 100% test pass rate.",
+        tags: ["Signoff", "Review", "Phase1"],
+        howto: "guidelines/TSK-01-06/how-to.md",
+        deliverables: ["Cargo workspace", "compose.yaml", "Platform API", "database/migrations/"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-02-01",
+        phase: "Phase 2",
+        status: "ready",
+        title: "Builder Identity & Keycloak OIDC",
+        desc: "Implement server-managed session cookies (HttpOnly, SameSite) and PKCE authorization code flow for portal builders.",
+        tags: ["Keycloak", "OIDC", "Auth", "Sessions"],
+        howto: "how-to-guide.md",
+        deliverables: ["services/platform-api/src/auth/"],
+        date: "Ready"
+      },
+      {
+        id: "TSK-02-02",
+        phase: "Phase 2",
+        status: "ready",
+        title: "Project Restrictions & 4-Tier RBAC",
+        desc: "Enforce project memberships, allowed adapters/themes, quotas, and Tier 4 Project Admin authorization.",
+        tags: ["RBAC", "Governance", "Projects"],
+        howto: "how-to-guide.md",
+        deliverables: ["services/platform-api/src/projects/"],
+        date: "Ready"
+      },
+      {
+        id: "TSK-03-01",
+        phase: "Phase 3",
+        status: "backlog",
+        title: "Sitemap Tree & Route Validation",
+        desc: "Build hierarchical sitemap management with route collision, nesting cycle, and slug formatting validation.",
+        tags: ["Sitemap", "Routing", "Tree"],
+        howto: "how-to-guide.md",
+        deliverables: ["apps/portal/src/components/sitemap/"],
+        date: "Future"
+      },
+      {
+        id: "TSK-03-02",
+        phase: "Phase 3",
+        status: "done",
+        title: "HeroUI Drawer, Admin Governance & Form Canvas",
+        desc: "Implemented Phase 3 Studio with HeroUI component drawer (All Components pill, categories, New/Updated badges), 3-tier Administrator governance toggle, Form container drag & drop target, and Developer RFC 9535 data binding inspector.",
+        tags: ["HeroUI", "FormCanvas", "AdminGovernance", "Phase3", "RFC9535", "RTL"],
+        howto: "guidelines/TSK-03-02/how-to.md",
+        deliverables: ["prototypes/prototype-1-studio/app/page.tsx", "ext/guidelines/TSK-03-02/"],
+        date: "2026-10-25"
+      },
+      {
+        id: "TSK-03-03",
+        phase: "Phase 3",
+        status: "backlog",
+        title: "Optimistic Locking & Stale Conflict UI",
+        desc: "Implement monotonic page version saving in Rust and conflict resolution dialogs (Reload, Compare Diff, Overwrite).",
+        tags: ["Concurrency", "OptimisticLocking", "Diff"],
+        howto: "how-to-guide.md#ht-0a-01-page-schema--database-modelling",
+        deliverables: ["apps/portal/src/components/editor/conflict-dialog.tsx"],
+        date: "Future"
+      },
+      {
+        id: "TSK-04-01",
+        phase: "Phase 4",
+        status: "backlog",
+        title: "API Registry & OpenAPI 3.x Importer",
+        desc: "Build API registry service supporting OpenAPI 3.x schema parsing, endpoint registration, and schema validation.",
+        tags: ["OpenAPI", "Registry", "JSONSchema"],
+        howto: "how-to-guide.md",
+        deliverables: ["services/platform-api/src/api_registry/"],
+        date: "Future"
+      },
+      {
+        id: "TSK-04-02",
+        phase: "Phase 4",
+        status: "backlog",
+        title: "SSRF Broker & Custom DNS Resolver",
+        desc: "Build hickory-resolver custom connector for reqwest: blocklist private/metadata IPs, zero rebinding gap, manual 3-hop redirect inspection.",
+        tags: ["SSRF", "DNSRebinding", "Security", "Hickory"],
+        howto: "how-to-guide.md",
+        deliverables: ["services/platform-api/src/broker/"],
+        date: "Future"
+      },
+      {
+        id: "TSK-04-03",
+        phase: "Phase 4",
+        status: "backlog",
+        title: "RFC 9535 Dual-Language Conformance",
+        desc: "Implement shared Rust and TypeScript path grammar parsers/evaluators passing 100% of packages/page-schema/conformance tests.",
+        tags: ["RFC9535", "Conformance", "Rust", "TypeScript"],
+        howto: "how-to-guide.md#ht-0a-02-wcag-22-contrast-audit--rfc-9535-path-evaluation",
+        deliverables: ["packages/page-schema/conformance/"],
+        date: "Future"
+      },
+      {
+        id: "TSK-05-01",
+        phase: "Phase 5",
+        status: "backlog",
+        title: "Manifest-Driven Published Site Renderer",
+        desc: "Build Next.js site-renderer consuming frozen release manifests: Static generation for public pages, dynamic SSR for protected pages.",
+        tags: ["SiteRenderer", "SSR", "StaticGeneration", "Next.js"],
+        howto: "how-to-guide.md",
+        deliverables: ["apps/site-renderer/"],
+        date: "Future"
+      },
+      {
+        id: "TSK-05-02",
+        phase: "Phase 5",
+        status: "backlog",
+        title: "Site Visitor Identity & Data Stripping",
+        desc: "Integrate visitor OIDC authentication and enforce server-side component stripping for unauthorized records before hydration.",
+        tags: ["VisitorAuth", "DataStripping", "Security"],
+        howto: "how-to-guide.md",
+        deliverables: ["apps/site-renderer/src/auth/"],
+        date: "Future"
+      },
+      {
+        id: "TSK-06-01",
+        phase: "Phase 6",
+        status: "backlog",
+        title: "Full Security Review & WCAG Audit",
+        desc: "Execute complete security-review skill checklist and automated axe-core accessibility audit across all screens.",
+        tags: ["Audit", "Security", "WCAG2AA", "Compliance"],
+        howto: "how-to-guide.md#ht-0a-02-wcag-22-contrast-audit--rfc-9535-path-evaluation",
+        deliverables: ["docs/security-audit-report.md"],
+        date: "Future"
+      },
+      {
+        id: "TSK-06-02",
+        phase: "Phase 6",
+        status: "backlog",
+        title: "Performance Target Benchmarking & Disaster Recovery",
+        desc: "Benchmark 500 components <100ms latency, broker overhead <50ms, TTFB <300ms. Perform and document database restore drill.",
+        tags: ["Performance", "Benchmarking", "DisasterRecovery"],
+        howto: "how-to-guide.md",
+        deliverables: ["docs/performance-benchmarks.md"],
+        date: "Future"
+      }
+    ];
+
+    let currentPhase = 'all';
+    let searchQuery = '';
+
+    // Render Board
+    function renderBoard() {
+      const columns = {
+        backlog: document.getElementById('cards-backlog'),
+        ready: document.getElementById('cards-ready'),
+        progress: document.getElementById('cards-progress'),
+        review: document.getElementById('cards-review'),
+        done: document.getElementById('cards-done')
+      };
+
+      // Clear all
+      Object.values(columns).forEach(col => col.innerHTML = '');
+
+      const counts = { backlog: 0, ready: 0, progress: 0, review: 0, done: 0 };
+
+      tasks.forEach(task => {
+        // Filter by Phase
+        if (currentPhase !== 'all') {
+          if (currentPhase === 'Future' && !['Phase 2', 'Phase 3', 'Phase 4', 'Phase 5', 'Phase 6'].includes(task.phase)) {
+            return;
+          } else if (currentPhase !== 'Future' && task.phase !== currentPhase) {
+            return;
+          }
+        }
+
+        // Filter by Search Query
+        if (searchQuery) {
+          const matchStr = `${task.id} ${task.title} ${task.desc} ${task.tags.join(' ')}`.toLowerCase();
+          if (!matchStr.includes(searchQuery.toLowerCase())) {
+            return;
+          }
+        }
+
+        counts[task.status]++;
+
+        // Determine Phase Class
+        let phaseClass = 'phase-future';
+        if (task.phase === 'Phase −1') phaseClass = 'phase-p1';
+        else if (task.phase === 'Phase 0A') phaseClass = 'phase-0a';
+        else if (task.phase === 'Phase 0B') phaseClass = 'phase-0b';
+        else if (task.phase === 'Phase 1') phaseClass = 'phase-p1-core';
+
+        const card = document.createElement('div');
+        card.className = 'task-card';
+        card.onclick = () => openModal(task);
+
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="task-id">${task.id}</span>
+            <span class="phase-badge ${phaseClass}">${task.phase}</span>
+          </div>
+          <div class="card-title">${task.title}</div>
+          <div class="card-desc">${task.desc}</div>
+          <div class="card-tags">
+            ${task.tags.map(t => `<span class="tag-chip">${t}</span>`).join('')}
+          </div>
+          <div class="card-footer">
+            <a href="${task.howto}" class="card-howto-link" onclick="event.stopPropagation()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              How-To
+            </a>
+            <span class="card-date">${task.date}</span>
+          </div>
+        `;
+
+        if (columns[task.status]) {
+          columns[task.status].appendChild(card);
+        }
+      });
+
+      // Update Column Counts
+      document.getElementById('count-backlog').innerText = counts.backlog;
+      document.getElementById('count-ready').innerText = counts.ready;
+      document.getElementById('count-progress').innerText = counts.progress;
+      document.getElementById('count-review').innerText = counts.review;
+      document.getElementById('count-done').innerText = counts.done;
+    }
+
+    // Modal Operations
+    function openModal(task) {
+      document.getElementById('modalTaskId').innerText = `${task.id} • ${task.phase}`;
+      document.getElementById('modalTaskTitle').innerText = task.title;
+      document.getElementById('modalTaskDesc').innerText = task.desc;
+      
+      const delivEl = document.getElementById('modalDeliverables');
+      delivEl.innerHTML = `
+        <ul>
+          ${task.deliverables.map(d => `<li><span>&bull;</span> <code>${d}</code></li>`).join('')}
+        </ul>
+      `;
+
+      const tagsEl = document.getElementById('modalTags');
+      tagsEl.innerHTML = task.tags.map(t => `<span class="tag-chip">${t}</span>`).join('');
+
+      // Populate Guideline Package links (Guideline, Example, How-To, Test Cases)
+      const guideLinksEl = document.getElementById('modalGuidelineLinks');
+      const hasGuidelines = ['TSK-P1-01', 'TSK-P1-02', 'TSK-P1-03', 'TSK-P1-04', 'TSK-P1-05', 'TSK-0A-01', 'TSK-0A-02', 'TSK-0B-01', 'TSK-0B-02', 'TSK-0B-03', 'TSK-0B-04', 'TSK-01-01', 'TSK-01-02', 'TSK-01-03', 'TSK-01-04', 'TSK-01-05', 'TSK-01-06', 'TSK-03-02'].includes(task.id);
+      
+      if (hasGuidelines) {
+        guideLinksEl.innerHTML = `
+          <a href="guidelines/${task.id}/guideline.md" target="_blank" style="padding: 0.35rem 0.65rem; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+            📋 Guideline
+          </a>
+          <a href="guidelines/${task.id}/example.md" target="_blank" style="padding: 0.35rem 0.65rem; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+            💡 Example
+          </a>
+          <a href="guidelines/${task.id}/how-to.md" target="_blank" style="padding: 0.35rem 0.65rem; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+            🛠️ How-To
+          </a>
+          <a href="guidelines/${task.id}/test-cases.md" target="_blank" style="padding: 0.35rem 0.65rem; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; color: var(--text-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+            🧪 Test Cases
+          </a>
+        `;
+      } else {
+        guideLinksEl.innerHTML = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Guidelines package will be generated upon phase pickup.</span>`;
+      }
+
+      document.getElementById('modalHowtoBtn').href = task.howto;
+      document.getElementById('taskModal').classList.add('active');
+    }
+
+    function closeModal(e) {
+      if (!e || e.target.id === 'taskModal' || e.target.classList.contains('modal-close-btn') || e.target.classList.contains('btn-secondary')) {
+        document.getElementById('taskModal').classList.remove('active');
+      }
+    }
+
+    // Search and Filters
+    function handleSearch() {
+      searchQuery = document.getElementById('searchInput').value;
+      renderBoard();
+    }
+
+    function setPhaseFilter(phase, btn) {
+      currentPhase = phase;
+      document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderBoard();
+    }
+
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      
+      const icon = document.getElementById('themeIcon');
+      if (next === 'light') {
+        icon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+      } else {
+        icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+      }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Initial render
+    renderBoard();
+  </script>
+</body>
+</html>
