@@ -425,12 +425,45 @@ export default function StudioPage() {
     }
   };
 
+  // Remove Section from Canvas
+  const removeCanvasSection = (sectionKey: CanvasSectionKey) => {
+    pushUndoSnapshot();
+    setSectionOrder((prev) => prev.filter((k) => k !== sectionKey));
+    if (sectionKey === 'table' && selectedNodeId === 'node-employee-table') {
+      setSelectedNodeId('node-manager-form');
+    } else if (
+      sectionKey === 'form' &&
+      (selectedNodeId === 'node-manager-form' || formFields.some((f) => f.id === selectedNodeId))
+    ) {
+      setSelectedNodeId('node-header-title');
+    } else if (sectionKey === 'header' && selectedNodeId === 'node-header-title') {
+      setSelectedNodeId('node-manager-form');
+    }
+  };
+
+  // Restore Section to Canvas
+  const restoreCanvasSection = (sectionKey: CanvasSectionKey) => {
+    pushUndoSnapshot();
+    if (!sectionOrder.includes(sectionKey)) {
+      setSectionOrder((prev) => [...prev, sectionKey]);
+    }
+    if (sectionKey === 'table') setSelectedNodeId('node-employee-table');
+    if (sectionKey === 'form') setSelectedNodeId('node-manager-form');
+    if (sectionKey === 'header') setSelectedNodeId('node-header-title');
+  };
+
   // Drop Component into Form (Builder Tier)
   const handleDropComponentIntoForm = (componentType: string) => {
     if (!adminAllowedComponents[componentType]) {
       alert(
         `[Admin Governance Restriction]: "${componentType}" is currently disabled by the Administrator. Enable it in Admin Governance to place it on the canvas.`,
       );
+      return;
+    }
+
+    // If Table component is selected and Table section was removed, restore it directly
+    if (componentType === 'Table' && !sectionOrder.includes('table')) {
+      restoreCanvasSection('table');
       return;
     }
 
@@ -1537,6 +1570,27 @@ export default function StudioPage() {
                             >
                               <ChevronDown size={13} />
                             </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCanvasSection('header');
+                              }}
+                              title="Remove Header Section from Canvas"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--portal-error)',
+                                cursor: 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderInlineStart: '1px solid var(--portal-border)',
+                                marginInlineStart: '2px',
+                                paddingInlineStart: '4px',
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
                           </div>
                         </div>
                       )}
@@ -1717,6 +1771,27 @@ export default function StudioPage() {
                                   }}
                                 >
                                   <ChevronDown size={13} />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeCanvasSection('form');
+                                  }}
+                                  title="Remove Form Section from Canvas"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--portal-error)',
+                                    cursor: 'pointer',
+                                    padding: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    borderInlineStart: '1px solid var(--portal-border)',
+                                    marginInlineStart: '2px',
+                                    paddingInlineStart: '4px',
+                                  }}
+                                >
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             </>
@@ -2137,6 +2212,27 @@ export default function StudioPage() {
                                 >
                                   <ChevronDown size={13} />
                                 </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeCanvasSection('table');
+                                  }}
+                                  title="Remove Table Component from Canvas"
+                                  style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--portal-error)',
+                                    cursor: 'pointer',
+                                    padding: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    borderInlineStart: '1px solid var(--portal-border)',
+                                    marginInlineStart: '2px',
+                                    paddingInlineStart: '4px',
+                                  }}
+                                >
+                                  <Trash2 size={13} />
+                                </button>
                               </div>
                             </>
                           )}
@@ -2321,6 +2417,98 @@ export default function StudioPage() {
 
                 return null;
               })}
+
+              {/* Canvas Section Restore Bar if any sections were removed */}
+              {!isPreviewMode && sectionOrder.length < 3 && (
+                <div
+                  style={{
+                    border: '1px dashed var(--portal-border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.75rem 1rem',
+                    background: 'var(--portal-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Layers size={14} style={{ color: 'var(--portal-text-muted)' }} />
+                    <span style={{ fontSize: '0.775rem', color: 'var(--portal-text-secondary)' }}>
+                      Available canvas sections:
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    {!sectionOrder.includes('table') && (
+                      <button
+                        onClick={() => restoreCanvasSection('table')}
+                        title="Restore Table Component to Canvas"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: 'var(--portal-accent)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.725rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>Restore Table Component</span>
+                      </button>
+                    )}
+                    {!sectionOrder.includes('form') && (
+                      <button
+                        onClick={() => restoreCanvasSection('form')}
+                        title="Restore Form Section to Canvas"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: 'var(--portal-accent)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.725rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>Restore Form Section</span>
+                      </button>
+                    )}
+                    {!sectionOrder.includes('header') && (
+                      <button
+                        onClick={() => restoreCanvasSection('header')}
+                        title="Restore Header Section to Canvas"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: 'var(--portal-accent)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.725rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>Restore Header Section</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>
@@ -2342,32 +2530,78 @@ export default function StudioPage() {
             >
               <div
                 style={{
-                  fontSize: '0.7rem',
-                  color: 'var(--portal-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: '8px',
                 }}
               >
-                Component Inspector
-              </div>
-              <div
-                style={{
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  color: 'var(--portal-text-primary)',
-                  marginTop: '2px',
-                }}
-              >
-                {selectedNode ? selectedNode.type : 'Select Node'}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.7rem',
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--portal-accent)',
-                }}
-              >
-                {selectedNodeId}
+                <div>
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--portal-text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Component Inspector
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      color: 'var(--portal-text-primary)',
+                      marginTop: '2px',
+                    }}
+                  >
+                    {selectedNode ? selectedNode.type : 'Select Node'}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--portal-accent)',
+                    }}
+                  >
+                    {selectedNodeId}
+                  </div>
+                </div>
+
+                {(selectedNodeId === 'node-employee-table' ||
+                  formFields.some((f) => f.id === selectedNodeId)) && (
+                  <button
+                    onClick={(e) => {
+                      if (selectedNodeId === 'node-employee-table') {
+                        removeCanvasSection('table');
+                      } else {
+                        handleDeleteFormField(selectedNodeId, e);
+                      }
+                    }}
+                    title={
+                      selectedNodeId === 'node-employee-table'
+                        ? 'Remove Table Component from Canvas'
+                        : 'Delete Component'
+                    }
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      color: 'var(--portal-error)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '4px 8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.725rem',
+                      fontWeight: 600,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Trash2 size={13} />
+                    <span>Delete</span>
+                  </button>
+                )}
               </div>
 
               {/* Viewport Selectors inside Component Inspector */}
