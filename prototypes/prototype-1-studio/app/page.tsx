@@ -756,8 +756,8 @@ export default function StudioPage() {
           )}
         </div>
 
-        {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        {/* Right Actions: Icons Only with Tooltips */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
           {/* PREVIEW MODE TOGGLE */}
           <button
             onClick={() => setIsPreviewMode(!isPreviewMode)}
@@ -770,60 +770,61 @@ export default function StudioPage() {
                 ? '1px solid var(--portal-accent)'
                 : '1px solid var(--portal-border-active)',
               color: isPreviewMode ? '#fff' : 'var(--portal-accent)',
-              padding: '6px 14px',
+              padding: '6px 8px',
               borderRadius: 'var(--radius-sm)',
-              fontSize: '0.8rem',
-              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              justifyContent: 'center',
               boxShadow: isPreviewMode
                 ? '0 2px 10px rgba(59, 130, 246, 0.4)'
                 : '0 2px 6px rgba(0, 0, 0, 0.1)',
               transition: 'all 0.15s ease',
             }}
           >
-            {isPreviewMode ? <EyeOff size={15} /> : <Eye size={15} />}
-            <span>{isPreviewMode ? 'Exit Preview' : 'Preview Page'}</span>
+            {isPreviewMode ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
 
           {/* RTL / LTR Toggle */}
           <button
             onClick={() => setDirection(direction === 'ltr' ? 'rtl' : 'ltr')}
+            title={
+              direction === 'ltr' ? 'Switch to RTL (Arabic / العربية)' : 'Switch to LTR (English)'
+            }
             style={{
               background: 'var(--portal-surface-elevated)',
               border: '1px solid var(--portal-border)',
               color: 'var(--portal-text-primary)',
-              padding: '5px 10px',
+              padding: '6px 8px',
               borderRadius: 'var(--radius-sm)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
             }}
           >
-            <Globe size={14} /> {direction === 'ltr' ? 'LTR (English)' : 'RTL (العربية)'}
+            <Globe size={16} />
           </button>
 
           {/* Theme Toggle */}
           <button
             onClick={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-            title="Toggle Light / Dark Mode"
+            title={themeMode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             style={{
               background: 'var(--portal-surface-elevated)',
               border: '1px solid var(--portal-border)',
               color: 'var(--portal-text-primary)',
-              padding: '6px',
+              padding: '6px 8px',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease',
             }}
           >
-            {themeMode === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            {themeMode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           {!isPreviewMode && (
@@ -834,22 +835,22 @@ export default function StudioPage() {
                   `Page published successfully to https://hr-portal.sites.example.com/managers (Release Manifest #105 generated with ${totalCount} HeroUI v3 nodes)`,
                 );
               }}
+              title={`Publish Page (${totalCount} HeroUI v3 Components)`}
               style={{
                 background: 'var(--portal-accent)',
                 color: 'var(--portal-accent-foreground)',
                 border: 'none',
-                padding: '6px 14px',
+                padding: '6px 9px',
                 borderRadius: 'var(--radius-sm)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                justifyContent: 'center',
                 boxShadow: '0 2px 8px rgba(37, 99, 235, 0.3)',
+                transition: 'all 0.15s ease',
               }}
             >
-              <Send size={14} /> Publish
+              <Send size={15} />
             </button>
           )}
         </div>
@@ -2411,75 +2412,60 @@ export default function StudioPage() {
                 >
                   <button
                     onClick={() => setViewport('desktop')}
-                    title="Desktop (12 Columns)"
+                    title="Desktop Viewport (12 Columns Grid)"
                     style={{
                       flex: 1,
                       background: viewport === 'desktop' ? 'var(--portal-accent)' : 'transparent',
                       color: viewport === 'desktop' ? '#fff' : 'var(--portal-text-secondary)',
                       border: 'none',
-                      padding: '5px 4px',
+                      padding: '6px 4px',
                       borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.675rem',
-                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px',
                       transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <Laptop size={12} />
-                    <span>Desktop (12 Col)</span>
+                    <Laptop size={14} />
                   </button>
                   <button
                     onClick={() => setViewport('tablet')}
-                    title="Tablet (768px)"
+                    title="Tablet Viewport (768px Width)"
                     style={{
                       flex: 1,
                       background: viewport === 'tablet' ? 'var(--portal-accent)' : 'transparent',
                       color: viewport === 'tablet' ? '#fff' : 'var(--portal-text-secondary)',
                       border: 'none',
-                      padding: '5px 4px',
+                      padding: '6px 4px',
                       borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.675rem',
-                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px',
                       transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <Tablet size={12} />
-                    <span>Tablet (768px)</span>
+                    <Tablet size={14} />
                   </button>
                   <button
                     onClick={() => setViewport('mobile')}
-                    title="Mobile (390px)"
+                    title="Mobile Viewport (390px Width)"
                     style={{
                       flex: 1,
                       background: viewport === 'mobile' ? 'var(--portal-accent)' : 'transparent',
                       color: viewport === 'mobile' ? '#fff' : 'var(--portal-text-secondary)',
                       border: 'none',
-                      padding: '5px 4px',
+                      padding: '6px 4px',
                       borderRadius: 'var(--radius-sm)',
-                      fontSize: '0.675rem',
-                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '4px',
                       transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap',
                     }}
                   >
-                    <Smartphone size={12} />
-                    <span>Mobile (390px)</span>
+                    <Smartphone size={14} />
                   </button>
                 </div>
               </div>
