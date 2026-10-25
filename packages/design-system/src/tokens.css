@@ -33,8 +33,14 @@
   --z-canvas-overlay: 30;
   --z-panel: 40;
   --z-dropdown: 50;
-  --z-modal: 100;
-  --z-toast: 150;
+  /* HeroUI v3 Core Variables (@heroui/styles) */
+  --radius: 0.5rem;
+  --field-radius: calc(var(--radius) * 1.5);
+  --radius-3xl: 1.5rem;
+  --cursor-interactive: pointer;
+  --cursor-disabled: not-allowed;
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
 }
 
 :root,
@@ -57,6 +63,21 @@
   --portal-error: #dc2626;
   --canvas-grid-line: rgba(37, 99, 235, 0.1);
   --canvas-grid-active: rgba(37, 99, 235, 0.28);
+
+  /* HeroUI v3 @heroui/styles Mapping (Light) */
+  --background: oklch(0.9702 0 0);
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-foreground: #0f172a;
+  --surface-secondary: #f1f5f9;
+  --surface-secondary-foreground: #0f172a;
+  --overlay: #ffffff;
+  --overlay-foreground: #0f172a;
+  --overlay-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --field-background: #ffffff;
+  --field-foreground: #0f172a;
+  --field-placeholder: #64748b;
+  --field-border: #e2e8f0;
 }
 
 [data-theme='dark'] {
@@ -80,6 +101,21 @@
   --portal-error: #ef4444;
   --canvas-grid-line: rgba(59, 130, 246, 0.12);
   --canvas-grid-active: rgba(59, 130, 246, 0.35);
+
+  /* HeroUI v3 @heroui/styles Mapping (Dark) */
+  --background: oklch(12% 0.005 285.823);
+  --foreground: #f8fafc;
+  --surface: #11131b;
+  --surface-foreground: #f8fafc;
+  --surface-secondary: #171b26;
+  --surface-secondary-foreground: #f8fafc;
+  --overlay: #171b26;
+  --overlay-foreground: #f8fafc;
+  --overlay-shadow: 0 24px 60px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --field-background: #11131b;
+  --field-foreground: #f8fafc;
+  --field-placeholder: #94a3b8;
+  --field-border: #232938;
 }
 
 /* Directional Typography & Layout */

@@ -45,3 +45,204 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--portal-text-muted);
 }
+
+/* =============================================================================
+   HeroUI v3 Component Styles (@heroui/styles specification)
+   ============================================================================= */
+
+/* Button (@heroui/styles/components/button.css) */
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  outline: none;
+  user-select: none;
+  cursor: var(--cursor-interactive);
+  transition:
+    transform 250ms var(--ease-smooth),
+    background-color 100ms var(--ease-out),
+    box-shadow 100ms var(--ease-out);
+  border: 1px solid transparent;
+}
+.button--primary {
+  background: var(--portal-accent);
+  color: var(--portal-accent-foreground);
+}
+.button--primary:hover {
+  background: var(--portal-accent-hover);
+}
+.button--secondary {
+  background: var(--portal-surface-hover);
+  color: var(--portal-text-primary);
+  border-color: var(--portal-border);
+}
+.button--ghost {
+  background: transparent;
+  color: var(--portal-text-secondary);
+}
+.button--ghost:hover {
+  background: var(--portal-surface-hover);
+  color: var(--portal-text-primary);
+}
+.button--danger {
+  background: var(--portal-error);
+  color: #ffffff;
+}
+
+/* Card (@heroui/styles/components/card.css) */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--portal-surface);
+  border: 1px solid var(--portal-border);
+  border-radius: min(32px, var(--radius-3xl));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.card__header {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.25rem 0.5rem;
+}
+.card__title {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--portal-text-primary);
+}
+.card__description {
+  font-size: 0.8rem;
+  color: var(--portal-text-muted);
+}
+.card__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 1rem 1.25rem;
+}
+.card__footer {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--portal-border);
+}
+
+/* DatePicker & DateRangePicker (@heroui/styles/components/date-range-picker.css) */
+.date-range-picker,
+.date-picker {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+.date-range-picker__trigger,
+.date-picker__trigger {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--field-radius);
+  background: var(--portal-surface);
+  border: 1px solid var(--portal-border);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.825rem;
+  cursor: var(--cursor-interactive);
+  transition:
+    border-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
+}
+.date-range-picker__trigger:hover,
+.date-picker__trigger:hover {
+  border-color: var(--portal-border-active);
+}
+.date-range-picker__range-separator {
+  padding: 0 0.25rem;
+  color: var(--portal-text-muted);
+  user-select: none;
+}
+.date-range-picker__popover,
+.date-picker__popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: 310px;
+  background: var(--portal-surface-elevated);
+  border: 1px solid var(--portal-border);
+  border-radius: min(32px, calc(var(--radius) * 2.5));
+  box-shadow: var(--overlay-shadow);
+  padding: 0.875rem 1rem;
+}
+
+/* RangeCalendar (@heroui/styles/components/range-calendar.css) */
+.range-calendar {
+  width: 100%;
+}
+.range-calendar__grid-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--portal-text-muted);
+  margin-bottom: 0.5rem;
+}
+.range-calendar__grid-body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 3px;
+}
+.range-calendar__cell {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table (@heroui/styles/components/table.css) */
+.table-root {
+  position: relative;
+  width: 100%;
+  overflow: clip;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--portal-border);
+  background: var(--portal-surface);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+[dir='rtl'] .table {
+  text-align: right;
+}
+.table__header {
+  background: var(--portal-surface-hover);
+  border-bottom: 1px solid var(--portal-border);
+}
+.table__header th {
+  padding: 0.625rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--portal-text-secondary);
+}
+.table__row {
+  border-bottom: 1px solid var(--portal-border);
+  transition: background-color 100ms var(--ease-out);
+}
+.table__row:hover {
+  background: var(--portal-surface-hover);
+}
+.table__cell {
+  padding: 0.75rem 1rem;
+  font-size: 0.825rem;
+  color: var(--portal-text-primary);
+}
