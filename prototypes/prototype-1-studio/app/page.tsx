@@ -4226,8 +4226,8 @@ function renderHeroUIComponent(
     );
   }
 
-  // 15. Alert & AlertDialog & Toast
-  if (field.type === 'Alert' || field.type === 'AlertDialog' || field.type === 'Toast') {
+  // 15. Alert & Toast
+  if (field.type === 'Alert' || field.type === 'Toast') {
     return (
       <div
         style={{
@@ -4253,7 +4253,706 @@ function renderHeroUIComponent(
     );
   }
 
-  // 16. Avatar & AvatarGroup
+  // 16. Form & Fieldset Container
+  if (field.type === 'Form' || field.type === 'Fieldset') {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '14px',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '10px',
+            paddingBottom: '8px',
+            borderBottom: '1px solid var(--portal-border)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                borderRadius: '4px',
+                background: 'rgba(59, 130, 246, 0.15)',
+                color: 'var(--portal-accent)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <FormInput size={14} />
+            </div>
+            <div>
+              <div
+                style={{
+                  fontSize: '0.825rem',
+                  fontWeight: 700,
+                  color: 'var(--portal-text-primary)',
+                }}
+              >
+                {field.props.title || 'Employee Registration Form'}
+              </div>
+              <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+                HeroUI Form Container · Managed Validation &amp; Payload Dispatch
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              background: 'rgba(59, 130, 246, 0.12)',
+              color: 'var(--portal-accent)',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontWeight: 600,
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            &lt;Form&gt;
+          </span>
+        </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '10px',
+            marginTop: '10px',
+          }}
+        >
+          <div>
+            <label
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                color: 'var(--portal-text-secondary)',
+                display: 'block',
+                marginBottom: '3px',
+              }}
+            >
+              Employee Full Name
+            </label>
+            <div
+              style={{
+                background: 'var(--portal-surface)',
+                border: '1px solid var(--portal-border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '5px 8px',
+                fontSize: '0.75rem',
+                color: 'var(--portal-text-muted)',
+              }}
+            >
+              e.g. Sarah Jenkins
+            </div>
+          </div>
+          <div>
+            <label
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                color: 'var(--portal-text-secondary)',
+                display: 'block',
+                marginBottom: '3px',
+              }}
+            >
+              Work Email
+            </label>
+            <div
+              style={{
+                background: 'var(--portal-surface)',
+                border: '1px solid var(--portal-border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '5px 8px',
+                fontSize: '0.75rem',
+                color: 'var(--portal-text-muted)',
+              }}
+            >
+              sarah.j@company.org
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+          <button
+            type="button"
+            style={{
+              background: 'var(--portal-accent)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              padding: '5px 12px',
+              fontSize: '0.725rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            <Send size={11} /> Submit Registration
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 17. Modal & AlertDialog
+  if (field.type === 'Modal' || field.type === 'AlertDialog') {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-md)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            borderBottom: '1px solid var(--portal-border)',
+            background: 'var(--portal-surface)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Maximize2 size={13} style={{ color: 'var(--portal-accent)' }} />
+            <span
+              style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--portal-text-primary)' }}
+            >
+              {field.props.title || 'Confirm Profile Changes'}
+            </span>
+          </div>
+          <div
+            style={{
+              width: '20px',
+              height: '20px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--portal-text-muted)',
+              cursor: 'pointer',
+            }}
+          >
+            <X size={12} />
+          </div>
+        </div>
+        <div
+          style={{
+            padding: '12px 14px',
+            fontSize: '0.75rem',
+            color: 'var(--portal-text-secondary)',
+            lineHeight: '1.4',
+          }}
+        >
+          {field.props.message ||
+            field.props.description ||
+            'Review and confirm the updated employee identity and system access permissions. This will trigger downstream synchronization across Keycloak and PostgreSQL.'}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: '8px',
+            padding: '8px 14px',
+            background: 'var(--portal-surface)',
+            borderTop: '1px solid var(--portal-border)',
+          }}
+        >
+          <button
+            type="button"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--portal-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 10px',
+              fontSize: '0.725rem',
+              color: 'var(--portal-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            style={{
+              background:
+                field.type === 'AlertDialog' ? 'var(--portal-error)' : 'var(--portal-accent)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 12px',
+              fontSize: '0.725rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {field.type === 'AlertDialog' ? 'Confirm Action' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 18. Card & Surface
+  if (field.type === 'Card' || field.type === 'Surface') {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-md)',
+          overflow: 'hidden',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div
+          style={{
+            padding: '10px 14px',
+            borderBottom: '1px solid var(--portal-border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Box size={14} style={{ color: 'var(--portal-accent)' }} />
+            <div>
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: 'var(--portal-text-primary)',
+                }}
+              >
+                {field.props.title || 'Department Card'}
+              </div>
+              <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+                {field.props.subtitle || 'Active Team Records'}
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: '0.65rem',
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: 'var(--portal-success)',
+              padding: '2px 6px',
+              borderRadius: '4px',
+              fontWeight: 600,
+            }}
+          >
+            Active
+          </span>
+        </div>
+        <div
+          style={{
+            padding: '12px 14px',
+            fontSize: '0.75rem',
+            color: 'var(--portal-text-secondary)',
+            lineHeight: '1.4',
+          }}
+        >
+          {field.props.content ||
+            'Structured HeroUI Card container with integrated Header, Body, and Footer sub-slots.'}
+        </div>
+        <div
+          style={{
+            padding: '8px 14px',
+            background: 'var(--portal-surface)',
+            borderTop: '1px solid var(--portal-border)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '0.725rem',
+              color: 'var(--portal-accent)',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            View Details <ChevronRight size={12} />
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 19. Drawer Slide-Over
+  if (field.type === 'Drawer') {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-md)',
+          padding: '12px 14px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <SlidersHorizontal size={13} style={{ color: 'var(--portal-accent)' }} />
+            <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>
+              {field.props.title || 'Configuration Drawer'}
+            </span>
+          </div>
+          <X size={12} style={{ color: 'var(--portal-text-muted)', cursor: 'pointer' }} />
+        </div>
+        <div
+          style={{
+            fontSize: '0.725rem',
+            color: 'var(--portal-text-secondary)',
+            marginBottom: '10px',
+          }}
+        >
+          Slide-out inspector drawer panel for auxiliary controls and parameters.
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+          <button
+            type="button"
+            style={{
+              background: 'var(--portal-accent)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 10px',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+            }}
+          >
+            Apply Settings
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 20. Popover & Tooltip
+  if (field.type === 'Popover' || field.type === 'Tooltip') {
+    return (
+      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '6px' }}>
+        <div
+          style={{
+            background: 'var(--portal-surface-elevated)',
+            border: '1px solid var(--portal-accent)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 10px',
+            boxShadow: 'var(--shadow-md)',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.725rem',
+              fontWeight: 600,
+              color: 'var(--portal-accent)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <Sparkles size={11} /> {field.props.title || field.type}
+          </div>
+          <div
+            style={{
+              fontSize: '0.7rem',
+              color: 'var(--portal-text-secondary)',
+              marginTop: '2px',
+            }}
+          >
+            {field.props.content || 'Contextual overlay anchored to trigger target'}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 21. Accordion & Disclosure
+  if (
+    field.type === 'Accordion' ||
+    field.type === 'Disclosure' ||
+    field.type === 'DisclosureGroup'
+  ) {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-sm)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 12px',
+            background: 'var(--portal-surface)',
+            cursor: 'pointer',
+          }}
+        >
+          <span
+            style={{ fontSize: '0.775rem', fontWeight: 600, color: 'var(--portal-text-primary)' }}
+          >
+            {field.props.title || 'Employment Terms & Policy Disclosure'}
+          </span>
+          <ChevronDown size={14} style={{ color: 'var(--portal-accent)' }} />
+        </div>
+        <div
+          style={{
+            padding: '8px 12px',
+            fontSize: '0.725rem',
+            color: 'var(--portal-text-secondary)',
+            borderTop: '1px solid var(--portal-border)',
+            lineHeight: '1.4',
+          }}
+        >
+          {field.props.content ||
+            'Standard enterprise non-disclosure agreement and automated compliance provisions apply.'}
+        </div>
+      </div>
+    );
+  }
+
+  // 22. Table
+  if (field.type === 'Table') {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-sm)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1fr 1fr',
+            padding: '6px 10px',
+            background: 'var(--portal-surface)',
+            borderBottom: '1px solid var(--portal-border)',
+            fontSize: '0.675rem',
+            fontWeight: 700,
+            color: 'var(--portal-text-secondary)',
+            textTransform: 'uppercase',
+          }}
+        >
+          <span>Name &amp; Role</span>
+          <span>Department</span>
+          <span style={{ textAlign: 'right' }}>Status</span>
+        </div>
+        {[
+          { name: 'Sarah Jenkins', role: 'Staff Eng', dept: 'Platform', status: 'Active' },
+          { name: 'Ahmed Al-Harthy', role: 'Arch Spec', dept: 'Enterprise', status: 'Pending' },
+        ].map((row) => (
+          <div
+            key={row.name}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr 1fr',
+              padding: '6px 10px',
+              borderBottom: '1px solid var(--portal-border)',
+              fontSize: '0.725rem',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--portal-text-primary)' }}>{row.name}</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--portal-text-muted)' }}>
+                {row.role}
+              </div>
+            </div>
+            <div style={{ color: 'var(--portal-text-secondary)' }}>{row.dept}</div>
+            <div style={{ textAlign: 'right' }}>
+              <span
+                style={{
+                  fontSize: '0.625rem',
+                  padding: '2px 5px',
+                  borderRadius: '4px',
+                  background:
+                    row.status === 'Active'
+                      ? 'rgba(16, 185, 129, 0.15)'
+                      : 'rgba(245, 158, 11, 0.15)',
+                  color:
+                    row.status === 'Active' ? 'var(--portal-success)' : 'var(--portal-warning)',
+                  fontWeight: 600,
+                }}
+              >
+                {row.status}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 23. ListBox, Menu, Dropdown
+  if (field.type === 'ListBox' || field.type === 'Menu' || field.type === 'Dropdown') {
+    return (
+      <div
+        style={{
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '4px',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: '0.675rem',
+            fontWeight: 700,
+            color: 'var(--portal-text-muted)',
+            padding: '4px 8px',
+            textTransform: 'uppercase',
+          }}
+        >
+          {field.props.title || field.type} Actions
+        </div>
+        {['View Record Summary', 'Edit Access Credentials', 'Export Audit Trail'].map(
+          (item, idx) => (
+            <div
+              key={item}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '5px 8px',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.725rem',
+                color: idx === 0 ? 'var(--portal-accent)' : 'var(--portal-text-primary)',
+                background: idx === 0 ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <span>{item}</span>
+              <ChevronRight size={11} style={{ color: 'var(--portal-text-muted)' }} />
+            </div>
+          ),
+        )}
+      </div>
+    );
+  }
+
+  // 24. Tabs
+  if (field.type === 'Tabs') {
+    return (
+      <div style={{ borderBottom: '1px solid var(--portal-border)', paddingBottom: '2px' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {['General Details', 'Permissions', 'Audit Logs'].map((tab, idx) => (
+            <div
+              key={tab}
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
+                color: idx === 0 ? 'var(--portal-accent)' : 'var(--portal-text-muted)',
+                borderBottom:
+                  idx === 0 ? '2px solid var(--portal-accent)' : '2px solid transparent',
+                cursor: 'pointer',
+              }}
+            >
+              {tab}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 25. Breadcrumbs
+  if (field.type === 'Breadcrumbs') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.725rem' }}>
+        <span style={{ color: 'var(--portal-text-muted)' }}>Portal</span>
+        <ChevronRight size={11} style={{ color: 'var(--portal-text-muted)' }} />
+        <span style={{ color: 'var(--portal-text-muted)' }}>Employees</span>
+        <ChevronRight size={11} style={{ color: 'var(--portal-text-muted)' }} />
+        <span style={{ color: 'var(--portal-accent)', fontWeight: 600 }}>Registration Form</span>
+      </div>
+    );
+  }
+
+  // 26. Pagination
+  if (field.type === 'Pagination') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        {['«', '1', '2', '3', '»'].map((pg, idx) => (
+          <div
+            key={pg}
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--portal-border)',
+              background: idx === 2 ? 'var(--portal-accent)' : 'var(--portal-surface-elevated)',
+              color: idx === 2 ? '#fff' : 'var(--portal-text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.7rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {pg}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 27. ScrollShadow
+  if (field.type === 'ScrollShadow') {
+    return (
+      <div
+        style={{
+          border: '1px dashed var(--portal-border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '8px 10px',
+          background: 'var(--portal-surface-elevated)',
+          position: 'relative',
+        }}
+      >
+        <div style={{ fontSize: '0.725rem', fontWeight: 600, color: 'var(--portal-text-primary)' }}>
+          ScrollShadow Container
+        </div>
+        <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)', marginTop: '2px' }}>
+          Gradient edge masks automatically reveal scroll depth on overflow.
+        </div>
+      </div>
+    );
+  }
+
+  // 28. Avatar & AvatarGroup
   if (field.type === 'Avatar' || field.type === 'AvatarGroup') {
     return (
       <div>
@@ -4289,7 +4988,7 @@ function renderHeroUIComponent(
     );
   }
 
-  // 17. Chips, Badges, Tags, Kbd
+  // 29. Chips, Badges, Tags, Kbd
   if (
     field.type === 'Badge' ||
     field.type === 'Chip' ||
@@ -4317,7 +5016,7 @@ function renderHeroUIComponent(
     );
   }
 
-  // 18. Progress, Meter, Spinner, Skeleton
+  // 30. Progress, Meter, ProgressCircle, Spinner, Skeleton
   if (field.type === 'ProgressBar' || field.type === 'Meter') {
     return (
       <div>
@@ -4349,19 +5048,363 @@ function renderHeroUIComponent(
     );
   }
 
-  // Fallback for all other container or disclosure components
+  if (field.type === 'ProgressCircle') {
+    const pct = field.props.value || 85;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ position: 'relative', width: '38px', height: '38px' }}>
+          <svg width="38" height="38" viewBox="0 0 36 36">
+            <path
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="var(--portal-border)"
+              strokeWidth="3"
+            />
+            <path
+              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="var(--portal-accent)"
+              strokeWidth="3"
+              strokeDasharray={`${pct}, 100`}
+            />
+          </svg>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--portal-accent)',
+            }}
+          >
+            {pct}%
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+            {field.props.label || 'Task Progress'}
+          </div>
+          <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+            Completion Ratio
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (field.type === 'Spinner') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
+        <Loader2 size={16} className="animate-spin" style={{ color: 'var(--portal-accent)' }} />
+        <span style={{ fontSize: '0.75rem', color: 'var(--portal-text-secondary)' }}>
+          {field.props.label || 'Loading asynchronous broker dataset...'}
+        </span>
+      </div>
+    );
+  }
+
+  if (field.type === 'Skeleton') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+        <div
+          style={{
+            height: '14px',
+            width: '60%',
+            background: 'var(--portal-border)',
+            borderRadius: '4px',
+            opacity: 0.6,
+          }}
+        />
+        <div
+          style={{
+            height: '24px',
+            width: '100%',
+            background: 'var(--portal-border)',
+            borderRadius: '4px',
+            opacity: 0.4,
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 31. Typography & Header & EmptyState
+  if (field.type === 'Typography' || field.type === 'Header') {
+    return (
+      <div style={{ padding: '4px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h4
+            style={{
+              margin: 0,
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              color: 'var(--portal-text-primary)',
+            }}
+          >
+            {field.props.title || field.props.text || 'Section Header'}
+          </h4>
+          <span
+            style={{
+              fontSize: '0.625rem',
+              background: 'rgba(59, 130, 246, 0.1)',
+              color: 'var(--portal-accent)',
+              padding: '1px 5px',
+              borderRadius: '3px',
+              fontWeight: 600,
+            }}
+          >
+            HeroUI Typography
+          </span>
+        </div>
+        {field.props.subtitle && (
+          <div
+            style={{ fontSize: '0.725rem', color: 'var(--portal-text-muted)', marginTop: '2px' }}
+          >
+            {field.props.subtitle}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (field.type === 'EmptyState') {
+    return (
+      <div
+        style={{
+          border: '1px dashed var(--portal-border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '16px',
+          textAlign: 'center',
+          background: 'var(--portal-surface-elevated)',
+        }}
+      >
+        <Sparkles size={22} style={{ color: 'var(--portal-accent)', margin: '0 auto 6px' }} />
+        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--portal-text-primary)' }}>
+          {field.props.title || 'No Pending Records'}
+        </div>
+        <div
+          style={{
+            fontSize: '0.7rem',
+            color: 'var(--portal-text-muted)',
+            margin: '3px 0 10px',
+          }}
+        >
+          {field.props.description || 'All items have been approved or dispatched.'}
+        </div>
+        <button
+          type="button"
+          style={{
+            background: 'var(--portal-accent)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            padding: '4px 10px',
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {field.props.buttonText || 'Refresh Dataset'}
+        </button>
+      </div>
+    );
+  }
+
+  // 32. Separator, Toolbar, Link, ButtonGroup
+  if (field.type === 'Separator') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '8px 0' }}>
+        <div style={{ flex: 1, height: '1px', background: 'var(--portal-border)' }} />
+        {field.props.label && (
+          <span
+            style={{
+              fontSize: '0.675rem',
+              color: 'var(--portal-text-muted)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {field.props.label}
+          </span>
+        )}
+        <div style={{ flex: 1, height: '1px', background: 'var(--portal-border)' }} />
+      </div>
+    );
+  }
+
+  if (field.type === 'Toolbar') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 10px',
+          background: 'var(--portal-surface-elevated)',
+          border: '1px solid var(--portal-border)',
+          borderRadius: 'var(--radius-sm)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            type="button"
+            style={{
+              background: 'var(--portal-surface)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '0.7rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          >
+            Filter
+          </button>
+          <button
+            type="button"
+            style={{
+              background: 'var(--portal-surface)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: '4px',
+              padding: '3px 8px',
+              fontSize: '0.7rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          >
+            Sort
+          </button>
+        </div>
+        <span style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+          HeroUI Action Toolbar
+        </span>
+      </div>
+    );
+  }
+
+  if (field.type === 'Link') {
+    return (
+      <a
+        href={field.props.href || '#'}
+        onClick={(e) => e.preventDefault()}
+        style={{
+          fontSize: '0.75rem',
+          color: 'var(--portal-accent)',
+          textDecoration: 'underline',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '4px',
+          fontWeight: 600,
+        }}
+      >
+        <LinkIcon size={12} /> {field.props.label || 'External Reference Document'}
+      </a>
+    );
+  }
+
+  if (field.type === 'ButtonGroup') {
+    return (
+      <div
+        style={{
+          display: 'inline-flex',
+          borderRadius: 'var(--radius-sm)',
+          overflow: 'hidden',
+          border: '1px solid var(--portal-border)',
+        }}
+      >
+        {['Save Draft', 'Publish Live'].map((btn, idx) => (
+          <button
+            key={btn}
+            type="button"
+            style={{
+              background: idx === 1 ? 'var(--portal-accent)' : 'var(--portal-surface-elevated)',
+              color: idx === 1 ? '#fff' : 'var(--portal-text-primary)',
+              border: 'none',
+              borderInlineStart: idx > 0 ? '1px solid var(--portal-border)' : 'none',
+              padding: '6px 12px',
+              fontSize: '0.725rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {btn}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (field.type === 'Label' || field.type === 'Description' || field.type === 'FieldError') {
+    if (field.type === 'FieldError') {
+      return (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--portal-error)',
+            fontSize: '0.7rem',
+          }}
+        >
+          <AlertCircle size={12} />{' '}
+          {field.props.message || 'Value does not satisfy schema validation constraint.'}
+        </div>
+      );
+    }
+    if (field.type === 'Description') {
+      return (
+        <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+          {field.props.text || 'Helper annotation describing input requirements and format.'}
+        </div>
+      );
+    }
+    return (
+      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--portal-text-primary)' }}>
+        {field.props.text || field.props.label || 'Field Label'}
+      </label>
+    );
+  }
+
+  // 33. Polished Fallback for any other component (Never returns bare 'HeroUI Component Node')
   return (
     <div
       style={{
         background: 'var(--portal-surface-elevated)',
         border: '1px solid var(--portal-border)',
         borderRadius: 'var(--radius-sm)',
-        padding: '8px 10px',
+        padding: '10px 12px',
+        boxShadow: 'var(--shadow-sm)',
       }}
     >
-      <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>{field.props.title || field.type}</div>
-      <div style={{ fontSize: '0.7rem', color: 'var(--portal-text-muted)', marginTop: '2px' }}>
-        {field.props.content || field.props.description || 'HeroUI Component Node'}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '4px',
+        }}
+      >
+        <div style={{ fontSize: '0.775rem', fontWeight: 600, color: 'var(--portal-text-primary)' }}>
+          {field.props.title || field.props.label || field.type}
+        </div>
+        <span
+          style={{
+            fontSize: '0.625rem',
+            background: 'rgba(59, 130, 246, 0.1)',
+            color: 'var(--portal-accent)',
+            padding: '1px 5px',
+            borderRadius: '3px',
+            fontWeight: 600,
+          }}
+        >
+          {field.type}
+        </span>
+      </div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--portal-text-secondary)', lineHeight: '1.4' }}>
+        {field.props.content ||
+          field.props.description ||
+          `${field.type} HeroUI v3 Canonical Component`}
       </div>
     </div>
   );
