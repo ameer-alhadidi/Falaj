@@ -18,3 +18,6 @@
 | `TC-03-06` | Developer Binding | Inspect form field data-binding | Selecting form field and opening "Binding (Phase 5)" tab displays RFC 9535 path (`$.data.employee[field]`) and synthesized outbound JSON. | Pass |
 | `TC-03-07` | RTL Layout Mirroring | Toggle Arabic RTL mode | Entire UI (drawer, guides, canvas, form fields, inspector) mirrors logically; Arabic typography (`IBM Plex Sans Arabic`) activates. | Pass |
 | `TC-03-08` | Theme Consistency | Toggle Dark / Light theme | All surfaces, borders, and text adhere to `--portal-*` CSS variables without hardcoded hex colors or contrast regressions. | Pass |
+| `TC-03-09` | Element & Section Moving | Reorder fields via arrows/drag & move section | Reorder buttons and drag handles successfully swap adjacent fields; section controls move Form above Page Header; Inspector stepper nudges horizontal position. | Pass |
+| `TC-03-10` | Full Page Preview Mode | Toggle Preview Mode and test live submission | Studio sidebars and guides hide; live form inputs accept data; submit triggers modal preview with valid RFC 9535 JSON payload; Esc key returns to Design Mode. | Pass |
+

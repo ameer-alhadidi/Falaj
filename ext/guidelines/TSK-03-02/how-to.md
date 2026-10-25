@@ -53,3 +53,41 @@
 3. Set the `$-Rooted` RFC 9535 JSONPath (e.g. `$.data.employee.startDate`).
 4. Review the **Outbound Mutation Payload Preview** showing real-time synthesized JSON.
 5. Click **Test Upstream Mutation** to simulate schema validation and dry-run dispatch against the backend Platform API.
+
+---
+
+## 5. Moving & Reordering Elements in the Canvas
+
+1. **Reordering Fields via Drag-and-Drop:**
+   - Hover over any form field inside the **Employee Onboarding Form**.
+   - Click and drag the vertical grip handle (`GripVertical`) on the left side of the field toolbar.
+   - Drag over another field—a blue indicator line appears showing the drop position (before or after).
+   - Release the mouse to instantly reorder the field in the layout.
+2. **One-Click Directional Arrow Reordering:**
+   - In each field header toolbar, use the **Move Earlier (Up)** (`ChevronUp`) or **Move Later (Down)** (`ChevronDown`) arrow buttons to shift elements sequentially across the grid.
+3. **Reordering Canvas Sections:**
+   - Each top-level canvas section (Page Header, Form Container, Employee Table) features section move controls in its top-right toolbar.
+   - Click `Section: Up` or `Section: Down` to move the Form above the Header, or Table above the Form.
+4. **Horizontal Position Nudging in Grid Inspector:**
+   - Select any field and open the **Grid & Move** tab in the right Inspector.
+   - Click `Nudge Left` or `Nudge Right` to shift the element's `colStart` across the 12-column grid.
+   - Select quick width presets: `50% (6 Col)`, `100% (12 Col)`, or `33% (4 Col)`.
+
+---
+
+## 6. Interactive Preview Mode
+
+1. In the top navigation bar, click the **Preview Page** button (or press `P`).
+2. Observe the seamless transition into Preview Mode:
+   - The left HeroUI drawer and right Inspector automatically collapse.
+   - The 12-column guide lines, column numbers, component ID tags, selection outlines, and dashed drop boxes disappear completely.
+   - A floating green banner appears: `Preview Mode: All studio guides, outlines, and editor chrome are hidden...`.
+3. **Test Live Form Interactions:**
+   - Type realistic input into the **Full Name** field.
+   - Select a department from the dropdown menu.
+   - Pick an employment date or toggle the VPN agreement checkbox.
+   - Click **Save & Dispatch Record**.
+   - A live **Form Submitted (Preview Simulation)** dialog appears displaying the synthesized RFC 9535 JSON payload!
+4. **Exit Preview Mode:**
+   - Click **Exit Preview** in the top bar or simply press the **Escape** key to return to Studio Design Mode with all panels intact.
+
