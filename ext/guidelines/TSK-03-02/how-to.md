@@ -5,31 +5,39 @@
 
 ---
 
-## 1. Navigating the HeroUI Component Drawer
+## 1. Navigating the Complete 72 HeroUI Component Drawer
 
 1. Open Prototype 1 Studio at `http://localhost:3001/`.
-2. Locate the left sidebar titled **Components** (HeroUI palette).
-3. Browse the component groups:
-   - **Form Controls:** `Input`, `Select`, `Autocomplete` *(Updated)*, `Calendar` *(Updated)*, `Checkbox` *(Updated)*, `CheckboxGroup` *(Updated)*.
-   - **Layout:** `Card`, `Accordion`, `Divider`.
-   - **Interactive:** `Button`, `Link`.
-   - **Data Display:** `AvatarGroup` *(New)*, `Badge`, `Table`.
-   - **Feedback & Navigation:** `Alert`, `Breadcrumbs`.
-4. Use the search input at the top of the drawer to quickly filter by keyword (e.g. typing `"cal"` filters directly to `Calendar`).
-5. Click on any category filter pill (e.g. `Form Controls`) to isolate controls for form construction.
+2. Locate the left sidebar titled **HeroUI Components** with top pill: **All Components (React) 72**.
+3. Browse the 7 standard HeroUI canonical component groups:
+   - **Form & Inputs (18 components):** `Input`, `TextArea`, `TextField`, `NumberField`, `InputGroup`, `InputOTP` *(New)*, `SearchField`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `Switch`, `SwitchGroup` *(New)*, `Slider`, `ToggleButton`, `ToggleButtonGroup`, `Label`, `Description`, `FieldError`.
+   - **Pickers & Selectors (12 components):** `Select`, `ComboBox`, `Autocomplete`, `DateField`, `TimeField`, `DatePicker`, `DateRangePicker`, `Calendar`, `RangeCalendar`, `ColorPicker` *(New)*, `ColorField`, `ColorSwatchPicker`.
+   - **Layout & Structure (12 components):** `Form`, `Fieldset`, `Card`, `Surface`, `Separator`, `Accordion`, `Disclosure`, `DisclosureGroup`, `Drawer`, `Modal`, `Popover`, `Toolbar`.
+   - **Interactive (4 components):** `Button`, `ButtonGroup`, `CloseButton`, `Link`.
+   - **Data Display (13 components):** `Table`, `ListBox`, `Menu`, `Dropdown`, `Avatar`, `AvatarGroup` *(New)*, `Badge`, `Chip`, `TagGroup`, `Kbd`, `Typography`, `Header`, `EmptyState` *(New)*.
+   - **Feedback & Indicators (8 components):** `Alert`, `AlertDialog`, `Toast`, `ProgressBar`, `ProgressCircle` *(New)*, `Spinner`, `Skeleton`, `Meter`.
+   - **Navigation & Scrolling (5 components):** `Breadcrumbs`, `Tabs`, `Pagination`, `ScrollShadow`, `Tooltip`.
+4. Use the search input at the top of the drawer to quickly filter across all 72 components in real time (e.g. typing `"color"` isolates `ColorPicker`, `ColorField`, `ColorSwatchPicker`; typing `"otp"` isolates `InputOTP`).
+5. Click on any category filter pill (e.g. `Pickers & Selectors` or `Form & Inputs`) to isolate controls.
+6. Reference mirrored HeroUI v3 skills and prompts:
+   - Local skills: `.agents/skills/heroui-react/`, `.agents/skills/heroui-migration/`, `.agents/skills/heroui-native/`
+   - HeroUI system prompts: `ext/heroui/prompts/heroui-system-prompt.md`, `bolt-heroui.md`, `v0-heroui.md`
 
 ---
 
-## 2. Administrator Governance (Tier 1)
+## 2. Administrator Governance (Tier 1 across 72 Components)
 
-1. Click the **Admin Governance** button in the top toolbar (indicated by the green shield icon).
-2. The modal **Administrator Component Governance** opens, listing all 15 system components and showing their permission status.
-3. Toggle any component to **Restricted** (for example, restrict `Autocomplete` or `AvatarGroup`).
-4. Click **Apply Governance Policy**.
-5. Observe the HeroUI sidebar:
-   - The restricted component now displays a dimmed background, an amber `Restricted` badge, and a lock icon.
+1. Click the **Admin Governance** button in the top toolbar (indicated by the shield icon).
+2. The modal **Administrator Component Governance** opens, listing all 72 system components with real-time stats (Allowed vs Restricted).
+3. Use the search box within the modal to filter by component name or category.
+4. Toggle any component to **Restricted** (for example, restrict experimental components like `ColorPicker` or `RangeCalendar`).
+5. Use quick actions:
+   - **Allow All:** Instantly resets governance, permitting all 72 components.
+   - **Restrict Experimental:** Automatically restricts experimental pickers and advanced widgets.
+6. Click **Apply Governance Policy**.
+7. Observe the HeroUI sidebar:
+   - The restricted component displays dimmed opacity, an amber `Restricted` badge, and a lock icon.
    - Hovering or clicking the item displays a governance alert: builders cannot place this component onto the canvas or into forms.
-6. Return to the modal and click **Allow All** to instantly restore full catalog availability.
 
 ---
 

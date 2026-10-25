@@ -43,7 +43,7 @@
 | `TSK-01-04` | Phase 1 | Design System Distribution | 2026-10-25 | Single-source tokens, build, and package linking via `@falaj/design-system` | [`ext/guidelines/TSK-01-04/`](file:///d:/work/Falaj/ext/guidelines/TSK-01-04/) |
 | `TSK-01-05` | Phase 1 | Rootless Podman Compose Stack | 2026-10-25 | `compose.yaml` with PostgreSQL 18, Keycloak 26.7, multi-stage Containerfile, rootless port mappings | [`ext/guidelines/TSK-01-05/`](file:///d:/work/Falaj/ext/guidelines/TSK-01-05/) |
 | `TSK-01-06` | Phase 1 | CI Pipeline on Podman | 2026-10-25 | `.github/workflows/ci.yml` running cargo clippy, nextest, audit, deny, and prettier checks | [`ext/guidelines/TSK-01-06/`](file:///d:/work/Falaj/ext/guidelines/TSK-01-06/) |
-| `TSK-03-02` | Phase 3 | HeroUI Drawer, Admin Governance & Form Canvas | 2026-10-25 | Phase 3 Studio with HeroUI component drawer, 3-tier Administrator governance toggle, Form container drag & drop target, and Developer RFC 9535 data binding inspector | [`ext/guidelines/TSK-03-02/`](file:///d:/work/Falaj/ext/guidelines/TSK-03-02/) |
+| `TSK-03-02` | Phase 3 | Complete 72 HeroUI v3 Components, Skills & Prompts, Canvas Reordering & Live Preview | 2026-10-25 | Phase 3 Studio with all 72 HeroUI components across 7 categories, canvas move/reorder, live preview mode, dynamic 72-component admin governance, mirrored HeroUI skills (react/migration/native) & system prompts | [`ext/guidelines/TSK-03-02/`](file:///d:/work/Falaj/ext/guidelines/TSK-03-02/) |
 
 ---
 
