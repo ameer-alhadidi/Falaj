@@ -5,6 +5,12 @@ import initialEmployees from '../fixtures/employees.json';
 import initialPageData from '../fixtures/page-nodes.json';
 import { COMPLETE_HERO_UI_CATALOG, HeroUIComponentItem } from '../fixtures/heroui-catalog';
 import {
+  INITIAL_SITEMAP_TREE,
+  INITIAL_PAGES_REGISTRY,
+  SitemapNode,
+  StudioPageDefinition,
+} from '../fixtures/sitemap';
+import {
   Layers,
   LayoutGrid,
   Box,
@@ -23,6 +29,9 @@ import {
   Tablet,
   Smartphone,
   FolderTree,
+  Folder,
+  FolderOpen,
+  File,
   FileCode,
   Lock,
   Plus,
@@ -293,10 +302,128 @@ export default function StudioPage() {
     },
   );
 
+  // Multi-Page & Sitemap State
+  const [sitemapTree, setSitemapTree] = useState<SitemapNode[]>(INITIAL_SITEMAP_TREE);
+  const [pagesRegistry, setPagesRegistry] =
+    useState<Record<string, StudioPageDefinition>>(INITIAL_PAGES_REGISTRY);
+  const [activePageId, setActivePageId] = useState<string>('page-managers-01');
+  const [leftPanelTab, setLeftPanelTab] = useState<'sitemap' | 'components'>('sitemap');
+  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+  const [showNewPageModal, setShowNewPageModal] = useState<boolean>(false);
+  const [newPageTitle, setNewPageTitle] = useState<string>('');
+  const [newPageRoute, setNewPageRoute] = useState<string>('');
+
   // Page Nodes State
   const [formFields, setFormFields] = useState<any[]>(INITIAL_FORM_FIELDS);
   const [pageNodes, setPageNodes] = useState(initialPageData.nodes);
   const [employees, setEmployees] = useState(initialEmployees.data);
+
+  // Handle Page Switching from Sitemap Tree or Top Bar Dropdown
+  const handleSelectPage = (targetPageId: string) => {
+    if (targetPageId === activePageId) return;
+
+    // Snapshot current active page into registry before switching
+    setPagesRegistry((prev) => ({
+      ...prev,
+      [activePageId]: {
+        ...prev[activePageId],
+        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
+        formFields: JSON.parse(JSON.stringify(formFields)),
+        sectionOrder: [...sectionOrder],
+      },
+    }));
+
+    const targetPage = pagesRegistry[targetPageId];
+    if (!targetPage) return;
+
+    setActivePageId(targetPageId);
+    setPageNodes(targetPage.pageNodes || []);
+    setFormFields(targetPage.formFields || []);
+    setSectionOrder(targetPage.sectionOrder || ['header', 'form']);
+
+    if (targetPage.formFields && targetPage.formFields.length > 0) {
+      setSelectedNodeId(targetPage.formFields[0].id);
+    } else {
+      setSelectedNodeId('node-header-title');
+    }
+    setSaveStatus('Saved');
+    setUndoStack([]);
+    setRedoStack([]);
+  };
+
+  // Handle Creating New Page in Sitemap
+  const handleCreateNewPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPageTitle.trim()) return;
+    const formattedRoute = newPageRoute.startsWith('/')
+      ? newPageRoute.trim()
+      : '/' + newPageRoute.trim().toLowerCase().replace(/\s+/g, '-');
+    const newId = 'page-' + Math.random().toString(36).substring(2, 9);
+
+    const newPageDef: StudioPageDefinition = {
+      pageId: newId,
+      title: newPageTitle.trim(),
+      route: formattedRoute,
+      description: `Custom layout and components for ${newPageTitle.trim()}`,
+      requiredPermissions: [],
+      version: 1,
+      sectionOrder: ['header', 'form'],
+      pageNodes: [
+        {
+          id: 'node-root-container',
+          type: 'Container',
+          schemaVersion: 1,
+          layout: { colStart: 1, colSpan: 12 },
+          props: { padding: 'var(--space-6)', background: 'transparent' },
+          children: [
+            {
+              id: 'node-page-header',
+              type: 'Section',
+              schemaVersion: 1,
+              layout: { colStart: 1, colSpan: 12 },
+              props: { spacing: 'var(--space-4)' },
+              children: [
+                {
+                  id: 'node-header-title',
+                  type: 'Heading',
+                  schemaVersion: 1,
+                  layout: { colStart: 1, colSpan: 8 },
+                  props: { level: 1, text: newPageTitle.trim(), align: 'start' },
+                },
+                {
+                  id: 'node-header-desc',
+                  type: 'Text',
+                  schemaVersion: 1,
+                  layout: { colStart: 1, colSpan: 8 },
+                  props: {
+                    content: `Visual canvas for ${formattedRoute}. Use the HeroUI Toolbox to drag-and-drop components.`,
+                    variant: 'muted',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      formFields: [],
+    };
+
+    const newSitemapNode: SitemapNode = {
+      id: newId,
+      title: newPageTitle.trim(),
+      route: formattedRoute,
+      type: 'page',
+      status: 'draft',
+      badge: 'New',
+    };
+
+    setPagesRegistry((prev) => ({ ...prev, [newId]: newPageDef }));
+    setSitemapTree((prev) => [...prev, newSitemapNode]);
+    setShowNewPageModal(false);
+    setNewPageTitle('');
+    setNewPageRoute('');
+    handleSelectPage(newId);
+  };
 
   // Undo/Redo Stacks
   const [undoStack, setUndoStack] = useState<any[]>([]);
@@ -661,6 +788,164 @@ export default function StudioPage() {
   const allowedCount = Object.values(adminAllowedComponents).filter(Boolean).length;
   const totalCount = COMPLETE_HERO_UI_CATALOG.length;
 
+  // Render a node in the Sitemap Hierarchy Tree
+  const renderSitemapNode = (node: SitemapNode, depth = 0) => {
+    const isFolder = node.type === 'folder';
+    const isCollapsed = !!collapsedFolders[node.id];
+    const isActive = node.id === activePageId;
+
+    return (
+      <div key={node.id} style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          id={`sitemap-node-${node.id}`}
+          onClick={() => {
+            if (isFolder) {
+              setCollapsedFolders((prev) => ({ ...prev, [node.id]: !prev[node.id] }));
+            } else {
+              handleSelectPage(node.id);
+            }
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '7px 10px',
+            paddingInlineStart: `${10 + depth * 14}px`,
+            borderRadius: 'var(--radius-sm)',
+            background: isActive ? 'rgba(59, 130, 246, 0.14)' : 'transparent',
+            border: isActive ? '1px solid var(--portal-accent)' : '1px solid transparent',
+            borderInlineStart: isActive
+              ? '3px solid var(--portal-accent)'
+              : '1px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            color: isActive ? 'var(--portal-accent)' : 'var(--portal-text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isActive) e.currentTarget.style.background = 'var(--portal-surface-hover)';
+          }}
+          onMouseLeave={(e) => {
+            if (!isActive) e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+            {isFolder ? (
+              <span
+                style={{
+                  color: 'var(--portal-text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+              >
+                {isCollapsed ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
+              </span>
+            ) : (
+              <span style={{ width: '13px', display: 'inline-block' }} />
+            )}
+
+            {isFolder ? (
+              isCollapsed ? (
+                <Folder size={14} style={{ color: '#f59e0b', flexShrink: 0 }} />
+              ) : (
+                <FolderOpen size={14} style={{ color: '#f59e0b', flexShrink: 0 }} />
+              )
+            ) : node.isHome ? (
+              <Globe size={14} style={{ color: 'var(--portal-accent)', flexShrink: 0 }} />
+            ) : (
+              <FileText
+                size={14}
+                style={{
+                  color: isActive ? 'var(--portal-accent)' : 'var(--portal-text-secondary)',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0,
+                overflow: 'hidden',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '0.775rem',
+                  fontWeight: isActive ? 700 : 500,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {node.title}
+              </span>
+              <span
+                style={{
+                  fontSize: '0.65rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--portal-text-muted)',
+                }}
+              >
+                {node.route}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            {node.requiredRole && (
+              <span
+                title={`Requires role: ${node.requiredRole}`}
+                style={{ color: 'var(--portal-text-muted)' }}
+              >
+                <Lock size={10} />
+              </span>
+            )}
+            {node.status && (
+              <span
+                style={{
+                  fontSize: '0.6rem',
+                  padding: '1px 5px',
+                  borderRadius: 'var(--radius-full)',
+                  fontWeight: 600,
+                  background:
+                    node.status === 'published'
+                      ? 'rgba(16, 185, 129, 0.15)'
+                      : 'rgba(245, 158, 11, 0.15)',
+                  color:
+                    node.status === 'published' ? 'var(--portal-success)' : 'var(--portal-warning)',
+                }}
+              >
+                {node.status}
+              </span>
+            )}
+            {node.badge && (
+              <span
+                style={{
+                  fontSize: '0.6rem',
+                  padding: '1px 5px',
+                  borderRadius: 'var(--radius-full)',
+                  fontWeight: 600,
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  color: '#8b5cf6',
+                }}
+              >
+                {node.badge}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Children if folder and not collapsed */}
+        {isFolder && !isCollapsed && node.children && (
+          <div style={{ display: 'flex', flexDirection: 'column', marginTop: '2px' }}>
+            {node.children.map((child) => renderSitemapNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -743,9 +1028,37 @@ export default function StudioPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
+                flexWrap: 'wrap',
               }}
             >
               <span>Project: Falaj Enterprise HR</span>
+              <span>•</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: 'var(--portal-text-secondary)', fontWeight: 600 }}>
+                  Page:
+                </span>
+                <select
+                  id="select-active-page-topbar"
+                  value={activePageId}
+                  onChange={(e) => handleSelectPage(e.target.value)}
+                  style={{
+                    background: 'var(--portal-surface-elevated)',
+                    border: '1px solid var(--portal-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '2px 8px',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: 'var(--portal-accent)',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="page-managers-01">📄 /managers — Personnel & Directory</option>
+                  <option value="page-onboarding-02">📄 /onboarding — Employee Onboarding</option>
+                  <option value="page-compliance-03">📄 /compliance — Security & Compliance</option>
+                  <option value="page-roles-04">📄 /admin/roles — Roles & RBAC Matrix</option>
+                </select>
+              </div>
               <span>•</span>
               <span
                 style={{
@@ -753,6 +1066,19 @@ export default function StudioPage() {
                 }}
               >
                 {saveStatus}
+              </span>
+              <span>•</span>
+              <span
+                style={{
+                  fontSize: '0.625rem',
+                  padding: '1px 6px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'rgba(139, 92, 246, 0.15)',
+                  color: '#a78bfa',
+                  fontWeight: 600,
+                }}
+              >
+                Adapter: HeroUI v3
               </span>
             </div>
           </div>
@@ -1043,414 +1369,648 @@ export default function StudioPage() {
               overflowY: 'hidden',
             }}
           >
-            {/* HeroUI Drawer Header & Search */}
+            {/* Left Panel Tabs: Sitemap vs Components */}
             <div
               style={{
-                padding: '0.85rem 1rem 0.5rem',
-                borderBottom: '1px solid var(--portal-border)',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '0.65rem',
+                borderBottom: '1px solid var(--portal-border)',
+                background: 'var(--portal-surface-elevated)',
               }}
             >
-              <div
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <div
-                  style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    color: 'var(--portal-text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Component size={14} style={{ color: 'var(--portal-accent)' }} />
-                  <span>Components</span>
-                </div>
-                <span
-                  style={{
-                    fontSize: '0.675rem',
-                    color: 'var(--portal-text-muted)',
-                    fontFamily: 'var(--font-mono)',
-                  }}
-                >
-                  HeroUI v3 ({totalCount})
-                </span>
-              </div>
-
-              {/* HeroUI Search Input */}
-              <div style={{ position: 'relative' }}>
-                <Search
-                  size={14}
-                  style={{
-                    position: 'absolute',
-                    insetInlineStart: '10px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--portal-text-muted)',
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Search 72 components..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    background: 'var(--portal-surface-elevated)',
-                    border: '1px solid var(--portal-border)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '6px 10px 6px 32px',
-                    fontSize: '0.75rem',
-                    color: 'var(--portal-text-primary)',
-                    outline: 'none',
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    style={{
-                      position: 'absolute',
-                      insetInlineEnd: '8px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--portal-text-muted)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <X size={12} />
-                  </button>
-                )}
-              </div>
-
-              {/* "All Components (React)" Top Pill */}
-              <div
-                onClick={() => setSelectedCategory('all')}
+              <button
+                id="tab-left-sitemap"
+                type="button"
+                onClick={() => setLeftPanelTab('sitemap')}
                 style={{
+                  flex: 1,
+                  padding: '9px 12px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background:
-                    selectedCategory === 'all'
-                      ? 'rgba(59, 130, 246, 0.12)'
-                      : 'var(--portal-surface-elevated)',
-                  border: `1px solid ${selectedCategory === 'all' ? 'var(--portal-accent)' : 'var(--portal-border)'}`,
-                  color:
-                    selectedCategory === 'all'
-                      ? 'var(--portal-accent)'
-                      : 'var(--portal-text-primary)',
-                  cursor: 'pointer',
-                  fontSize: '0.775rem',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  fontSize: '0.75rem',
                   fontWeight: 600,
+                  background: leftPanelTab === 'sitemap' ? 'var(--portal-surface)' : 'transparent',
+                  color:
+                    leftPanelTab === 'sitemap'
+                      ? 'var(--portal-accent)'
+                      : 'var(--portal-text-secondary)',
+                  border: 'none',
+                  borderBottom:
+                    leftPanelTab === 'sitemap'
+                      ? '2px solid var(--portal-accent)'
+                      : '2px solid transparent',
+                  cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Layers size={14} />
-                  <span>All Components (React)</span>
-                </div>
+                <FolderTree size={14} />
+                <span>Sitemap</span>
                 <span
                   style={{
-                    fontSize: '0.65rem',
-                    fontFamily: 'var(--font-mono)',
-                    background:
-                      selectedCategory === 'all'
-                        ? 'var(--portal-accent)'
-                        : 'var(--portal-surface-hover)',
-                    color: selectedCategory === 'all' ? '#fff' : 'var(--portal-text-secondary)',
-                    padding: '1px 6px',
+                    fontSize: '0.625rem',
+                    padding: '1px 5px',
                     borderRadius: 'var(--radius-full)',
-                  }}
-                >
-                  {filteredCatalog.length}
-                </span>
-              </div>
-            </div>
-
-            {/* HeroUI Category Quick Chips */}
-            <div
-              style={{
-                padding: '0.5rem 0.75rem',
-                display: 'flex',
-                gap: '4px',
-                overflowX: 'auto',
-                borderBottom: '1px solid var(--portal-border)',
-                background: 'var(--portal-surface-elevated)',
-              }}
-            >
-              {[
-                'Form & Inputs',
-                'Pickers & Selectors',
-                'Layout & Structure',
-                'Interactive',
-                'Data Display',
-                'Feedback',
-                'Navigation',
-              ].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
-                  style={{
                     background:
-                      selectedCategory === cat ? 'var(--portal-accent)' : 'var(--portal-surface)',
-                    color: selectedCategory === cat ? '#fff' : 'var(--portal-text-secondary)',
-                    border: '1px solid var(--portal-border)',
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
-                    padding: '3px 8px',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
+                      leftPanelTab === 'sitemap'
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : 'var(--portal-surface-hover)',
+                    color:
+                      leftPanelTab === 'sitemap'
+                        ? 'var(--portal-accent)'
+                        : 'var(--portal-text-muted)',
                   }}
                 >
-                  {cat}
-                </button>
-              ))}
+                  {sitemapTree.length}
+                </span>
+              </button>
+              <button
+                id="tab-left-components"
+                type="button"
+                onClick={() => setLeftPanelTab('components')}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  background:
+                    leftPanelTab === 'components' ? 'var(--portal-surface)' : 'transparent',
+                  color:
+                    leftPanelTab === 'components'
+                      ? 'var(--portal-accent)'
+                      : 'var(--portal-text-secondary)',
+                  border: 'none',
+                  borderBottom:
+                    leftPanelTab === 'components'
+                      ? '2px solid var(--portal-accent)'
+                      : '2px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Component size={14} />
+                <span>Components</span>
+                <span
+                  style={{
+                    fontSize: '0.625rem',
+                    padding: '1px 5px',
+                    borderRadius: 'var(--radius-full)',
+                    background:
+                      leftPanelTab === 'components'
+                        ? 'rgba(59, 130, 246, 0.15)'
+                        : 'var(--portal-surface-hover)',
+                    color:
+                      leftPanelTab === 'components'
+                        ? 'var(--portal-accent)'
+                        : 'var(--portal-text-muted)',
+                  }}
+                >
+                  {totalCount}
+                </span>
+              </button>
             </div>
 
-            {/* HeroUI Grouped Component List */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '0.75rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-              }}
-            >
-              {categoriesPresent.map((category) => {
-                const items = filteredCatalog.filter((item) => item.category === category);
-                return (
+            {/* TAB 1: SITEMAP HIERARCHY TREE */}
+            {leftPanelTab === 'sitemap' && (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflowY: 'hidden',
+                }}
+              >
+                {/* Sitemap Header & Add Page Action */}
+                <div
+                  style={{
+                    padding: '0.75rem 1rem',
+                    borderBottom: '1px solid var(--portal-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: 'var(--portal-text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <FolderTree size={14} style={{ color: 'var(--portal-accent)' }} />
+                      <span>Sitemap Hierarchy</span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.65rem',
+                        color: 'var(--portal-text-muted)',
+                        marginTop: '2px',
+                      }}
+                    >
+                      Click node to switch page on canvas
+                    </div>
+                  </div>
+
+                  <button
+                    id="btn-add-sitemap-page"
+                    type="button"
+                    onClick={() => setShowNewPageModal(true)}
+                    title="Add New Page"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      background: 'var(--portal-surface-elevated)',
+                      border: '1px solid var(--portal-border)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '4px 8px',
+                      color: 'var(--portal-accent)',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Plus size={12} />
+                    <span>New Page</span>
+                  </button>
+                </div>
+
+                {/* Sitemap Tree View */}
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '0.65rem 0.5rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  {sitemapTree.map((node) => renderSitemapNode(node))}
+                </div>
+
+                {/* Sitemap Footer */}
+                <div
+                  style={{
+                    padding: '0.65rem 0.85rem',
+                    borderTop: '1px solid var(--portal-border)',
+                    background: 'var(--portal-surface-elevated)',
+                    fontSize: '0.7rem',
+                    color: 'var(--portal-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Globe size={13} style={{ color: 'var(--portal-accent)' }} />
+                    <span>Active: {pagesRegistry[activePageId]?.route || '/managers'}</span>
+                  </div>
+                  <span style={{ fontWeight: 600, color: 'var(--portal-success)' }}>
+                    {pagesRegistry[activePageId]?.requiredPermissions?.[0] || 'Public'}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: HEROUI COMPONENT DRAWER */}
+            {leftPanelTab === 'components' && (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflowY: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '0.85rem 1rem 0.5rem',
+                    borderBottom: '1px solid var(--portal-border)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.65rem',
+                  }}
+                >
                   <div
-                    key={category}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
                   >
                     <div
                       style={{
-                        fontSize: '0.7rem',
+                        fontSize: '0.8rem',
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
-                        color: 'var(--portal-text-muted)',
-                        padding: '2px 6px',
+                        letterSpacing: '0.05em',
+                        color: 'var(--portal-text-secondary)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
+                        gap: '6px',
                       }}
                     >
-                      <span>{category}</span>
-                      <span style={{ fontSize: '0.65rem' }}>{items.length}</span>
+                      <Component size={14} style={{ color: 'var(--portal-accent)' }} />
+                      <span>Components</span>
                     </div>
+                    <span
+                      style={{
+                        fontSize: '0.675rem',
+                        color: 'var(--portal-text-muted)',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      HeroUI v3 ({totalCount})
+                    </span>
+                  </div>
 
-                    {items.map((item) => {
-                      const IconComp = item.icon;
-                      const isAllowed = adminAllowedComponents[item.type] !== false;
+                  {/* HeroUI Search Input */}
+                  <div style={{ position: 'relative' }}>
+                    <Search
+                      size={14}
+                      style={{
+                        position: 'absolute',
+                        insetInlineStart: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: 'var(--portal-text-muted)',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search 72 components..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{
+                        width: '100%',
+                        background: 'var(--portal-surface-elevated)',
+                        border: '1px solid var(--portal-border)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '6px 10px 6px 32px',
+                        fontSize: '0.75rem',
+                        color: 'var(--portal-text-primary)',
+                        outline: 'none',
+                      }}
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        style={{
+                          position: 'absolute',
+                          insetInlineEnd: '8px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--portal-text-muted)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
 
-                      return (
+                  {/* "All Components (React)" Top Pill */}
+                  <div
+                    onClick={() => setSelectedCategory('all')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '6px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      background:
+                        selectedCategory === 'all'
+                          ? 'rgba(59, 130, 246, 0.12)'
+                          : 'var(--portal-surface-elevated)',
+                      border: `1px solid ${selectedCategory === 'all' ? 'var(--portal-accent)' : 'var(--portal-border)'}`,
+                      color:
+                        selectedCategory === 'all'
+                          ? 'var(--portal-accent)'
+                          : 'var(--portal-text-primary)',
+                      cursor: 'pointer',
+                      fontSize: '0.775rem',
+                      fontWeight: 600,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={14} />
+                      <span>All Components (React)</span>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: '0.65rem',
+                        fontFamily: 'var(--font-mono)',
+                        background:
+                          selectedCategory === 'all'
+                            ? 'var(--portal-accent)'
+                            : 'var(--portal-surface-hover)',
+                        color: selectedCategory === 'all' ? '#fff' : 'var(--portal-text-secondary)',
+                        padding: '1px 6px',
+                        borderRadius: 'var(--radius-full)',
+                      }}
+                    >
+                      {filteredCatalog.length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* HeroUI Category Quick Chips */}
+                <div
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    display: 'flex',
+                    gap: '4px',
+                    overflowX: 'auto',
+                    borderBottom: '1px solid var(--portal-border)',
+                    background: 'var(--portal-surface-elevated)',
+                  }}
+                >
+                  {[
+                    'Form & Inputs',
+                    'Pickers & Selectors',
+                    'Layout & Structure',
+                    'Interactive',
+                    'Data Display',
+                    'Feedback',
+                    'Navigation',
+                  ].map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
+                      style={{
+                        background:
+                          selectedCategory === cat
+                            ? 'var(--portal-accent)'
+                            : 'var(--portal-surface)',
+                        color: selectedCategory === cat ? '#fff' : 'var(--portal-text-secondary)',
+                        border: '1px solid var(--portal-border)',
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        padding: '3px 8px',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* HeroUI Grouped Component List */}
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '0.75rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1rem',
+                  }}
+                >
+                  {categoriesPresent.map((category) => {
+                    const items = filteredCatalog.filter((item) => item.category === category);
+                    return (
+                      <div
+                        key={category}
+                        style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
+                      >
                         <div
-                          key={item.type}
-                          draggable={isAllowed}
-                          onDragStart={(e) => {
-                            if (!isAllowed) {
-                              e.preventDefault();
-                              return;
-                            }
-                            setDraggedComponentType(item.type);
-                            e.dataTransfer.setData('text/plain', item.type);
-                          }}
-                          onDragEnd={() => setDraggedComponentType(null)}
-                          onClick={() => {
-                            if (!isAllowed) {
-                              alert(
-                                `[Admin Policy Restricted]: "${item.type}" has been restricted by the Administrator. Unlock it via Admin Governance.`,
-                              );
-                              return;
-                            }
-                            handleDropComponentIntoForm(item.type);
-                          }}
-                          title={
-                            isAllowed
-                              ? `${item.type}: ${item.desc} (Drag into Form or click '+' to add)`
-                              : `[Restricted]: Disabled by Administrator governance policy`
-                          }
                           style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            color: 'var(--portal-text-muted)',
+                            padding: '2px 6px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            padding: '6px 10px',
-                            borderRadius: 'var(--radius-sm)',
-                            background: isAllowed
-                              ? 'var(--portal-surface-elevated)'
-                              : 'rgba(245, 158, 11, 0.06)',
-                            border: `1px solid ${isAllowed ? 'var(--portal-border)' : 'rgba(245, 158, 11, 0.3)'}`,
-                            opacity: isAllowed ? 1 : 0.6,
-                            cursor: isAllowed ? 'grab' : 'not-allowed',
-                            transition: 'all 0.15s ease',
-                            position: 'relative',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (isAllowed) {
-                              e.currentTarget.style.borderColor = 'var(--portal-border-active)';
-                              e.currentTarget.style.background = 'var(--portal-surface-hover)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (isAllowed) {
-                              e.currentTarget.style.borderColor = 'var(--portal-border)';
-                              e.currentTarget.style.background = 'var(--portal-surface-elevated)';
-                            }
                           }}
                         >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              minWidth: 0,
-                            }}
-                          >
-                            <GripVertical
-                              size={12}
-                              style={{
-                                color: isAllowed
-                                  ? 'var(--portal-text-muted)'
-                                  : 'var(--portal-warning)',
-                                cursor: isAllowed ? 'grab' : 'not-allowed',
-                              }}
-                            />
-                            <IconComp
-                              size={15}
-                              style={{
-                                color: isAllowed
-                                  ? 'var(--portal-accent)'
-                                  : 'var(--portal-text-muted)',
-                                flexShrink: 0,
-                              }}
-                            />
-                            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                              <span
-                                style={{
-                                  fontSize: '0.785rem',
-                                  fontWeight: 600,
-                                  color: isAllowed
-                                    ? 'var(--portal-text-primary)'
-                                    : 'var(--portal-text-muted)',
-                                  textDecoration: isAllowed ? 'none' : 'line-through',
-                                }}
-                              >
-                                {item.type}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            {!isAllowed && (
-                              <span
-                                style={{
-                                  fontSize: '0.625rem',
-                                  padding: '1px 5px',
-                                  borderRadius: 'var(--radius-sm)',
-                                  background: 'rgba(245, 158, 11, 0.15)',
-                                  color: 'var(--portal-warning)',
-                                  fontWeight: 700,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                }}
-                              >
-                                <Lock size={10} /> Restricted
-                              </span>
-                            )}
-
-                            {isAllowed && item.badge === 'New' && (
-                              <span
-                                style={{
-                                  fontSize: '0.625rem',
-                                  padding: '1px 6px',
-                                  borderRadius: 'var(--radius-full)',
-                                  background: 'rgba(236, 72, 153, 0.15)',
-                                  color: '#ec4899',
-                                  fontWeight: 700,
-                                }}
-                              >
-                                New
-                              </span>
-                            )}
-
-                            {isAllowed && item.badge === 'Updated' && (
-                              <span
-                                style={{
-                                  fontSize: '0.625rem',
-                                  padding: '1px 6px',
-                                  borderRadius: 'var(--radius-full)',
-                                  background: 'rgba(139, 92, 246, 0.15)',
-                                  color: '#8b5cf6',
-                                  fontWeight: 700,
-                                }}
-                              >
-                                Updated
-                              </span>
-                            )}
-
-                            {isAllowed && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDropComponentIntoForm(item.type);
-                                }}
-                                title={`Add ${item.type} to Form`}
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: 'var(--portal-accent)',
-                                  padding: '2px',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <Plus size={13} />
-                              </button>
-                            )}
-                          </div>
+                          <span>{category}</span>
+                          <span style={{ fontSize: '0.65rem' }}>{items.length}</span>
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
 
-            {/* Drawer Footer */}
-            <div
-              style={{
-                padding: '0.65rem 0.85rem',
-                borderTop: '1px solid var(--portal-border)',
-                background: 'var(--portal-surface-elevated)',
-                fontSize: '0.7rem',
-                color: 'var(--portal-text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <ShieldCheck size={13} style={{ color: 'var(--portal-success)' }} />
-                <span>Admin Policy Active</span>
+                        {items.map((item) => {
+                          const IconComp = item.icon;
+                          const isAllowed = adminAllowedComponents[item.type] !== false;
+
+                          return (
+                            <div
+                              key={item.type}
+                              draggable={isAllowed}
+                              onDragStart={(e) => {
+                                if (!isAllowed) {
+                                  e.preventDefault();
+                                  return;
+                                }
+                                setDraggedComponentType(item.type);
+                                e.dataTransfer.setData('text/plain', item.type);
+                              }}
+                              onDragEnd={() => setDraggedComponentType(null)}
+                              onClick={() => {
+                                if (!isAllowed) {
+                                  alert(
+                                    `[Admin Policy Restricted]: "${item.type}" has been restricted by the Administrator. Unlock it via Admin Governance.`,
+                                  );
+                                  return;
+                                }
+                                handleDropComponentIntoForm(item.type);
+                              }}
+                              title={
+                                isAllowed
+                                  ? `${item.type}: ${item.desc} (Drag into Form or click '+' to add)`
+                                  : `[Restricted]: Disabled by Administrator governance policy`
+                              }
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 10px',
+                                borderRadius: 'var(--radius-sm)',
+                                background: isAllowed
+                                  ? 'var(--portal-surface-elevated)'
+                                  : 'rgba(245, 158, 11, 0.06)',
+                                border: `1px solid ${isAllowed ? 'var(--portal-border)' : 'rgba(245, 158, 11, 0.3)'}`,
+                                opacity: isAllowed ? 1 : 0.6,
+                                cursor: isAllowed ? 'grab' : 'not-allowed',
+                                transition: 'all 0.15s ease',
+                                position: 'relative',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (isAllowed) {
+                                  e.currentTarget.style.borderColor = 'var(--portal-border-active)';
+                                  e.currentTarget.style.background = 'var(--portal-surface-hover)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (isAllowed) {
+                                  e.currentTarget.style.borderColor = 'var(--portal-border)';
+                                  e.currentTarget.style.background =
+                                    'var(--portal-surface-elevated)';
+                                }
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  minWidth: 0,
+                                }}
+                              >
+                                <GripVertical
+                                  size={12}
+                                  style={{
+                                    color: isAllowed
+                                      ? 'var(--portal-text-muted)'
+                                      : 'var(--portal-warning)',
+                                    cursor: isAllowed ? 'grab' : 'not-allowed',
+                                  }}
+                                />
+                                <IconComp
+                                  size={15}
+                                  style={{
+                                    color: isAllowed
+                                      ? 'var(--portal-accent)'
+                                      : 'var(--portal-text-muted)',
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                <div
+                                  style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: '0.785rem',
+                                      fontWeight: 600,
+                                      color: isAllowed
+                                        ? 'var(--portal-text-primary)'
+                                        : 'var(--portal-text-muted)',
+                                      textDecoration: isAllowed ? 'none' : 'line-through',
+                                    }}
+                                  >
+                                    {item.type}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {!isAllowed && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      padding: '1px 5px',
+                                      borderRadius: 'var(--radius-sm)',
+                                      background: 'rgba(245, 158, 11, 0.15)',
+                                      color: 'var(--portal-warning)',
+                                      fontWeight: 700,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                  >
+                                    <Lock size={10} /> Restricted
+                                  </span>
+                                )}
+
+                                {isAllowed && item.badge === 'New' && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      padding: '1px 6px',
+                                      borderRadius: 'var(--radius-full)',
+                                      background: 'rgba(236, 72, 153, 0.15)',
+                                      color: '#ec4899',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    New
+                                  </span>
+                                )}
+
+                                {isAllowed && item.badge === 'Updated' && (
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      padding: '1px 6px',
+                                      borderRadius: 'var(--radius-full)',
+                                      background: 'rgba(139, 92, 246, 0.15)',
+                                      color: '#8b5cf6',
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    Updated
+                                  </span>
+                                )}
+
+                                {isAllowed && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDropComponentIntoForm(item.type);
+                                    }}
+                                    title={`Add ${item.type} to Form`}
+                                    style={{
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: 'var(--portal-accent)',
+                                      padding: '2px',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    <Plus size={13} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Drawer Footer */}
+                <div
+                  style={{
+                    padding: '0.65rem 0.85rem',
+                    borderTop: '1px solid var(--portal-border)',
+                    background: 'var(--portal-surface-elevated)',
+                    fontSize: '0.7rem',
+                    color: 'var(--portal-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <ShieldCheck size={13} style={{ color: 'var(--portal-success)' }} />
+                    <span>Admin Policy Active</span>
+                  </div>
+                  <span style={{ fontWeight: 600, color: 'var(--portal-text-primary)' }}>
+                    {allowedCount}/{totalCount} Available
+                  </span>
+                </div>
               </div>
-              <span style={{ fontWeight: 600, color: 'var(--portal-text-primary)' }}>
-                {allowedCount}/{totalCount} Available
-              </span>
-            </div>
+            )}
           </aside>
         )}
 
@@ -1688,7 +2248,7 @@ export default function StudioPage() {
                           marginBottom: '0.35rem',
                         }}
                       >
-                        Personnel & Management Directory
+                        {pagesRegistry[activePageId]?.title || 'Personnel & Management Directory'}
                       </h1>
                       <p
                         style={{
@@ -1697,9 +2257,8 @@ export default function StudioPage() {
                           maxWidth: '720px',
                         }}
                       >
-                        Powered by 72 HeroUI v3 accessible components. Demonstrates drag-and-drop
-                        assembly, element movement, Administrator governance, and interactive live
-                        preview mode.
+                        {pagesRegistry[activePageId]?.description ||
+                          'Powered by 72 HeroUI v3 accessible components. Demonstrates drag-and-drop assembly, element movement, Administrator governance, and interactive live preview mode.'}
                       </p>
                     </div>
                   );
@@ -4476,6 +5035,193 @@ export default function StudioPage() {
                 Apply Governance Policy
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create New Sitemap Page Modal */}
+      {showNewPageModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem',
+          }}
+          onClick={() => setShowNewPageModal(false)}
+        >
+          <div
+            style={{
+              width: '420px',
+              maxWidth: '95vw',
+              background: 'var(--portal-surface)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1.25rem',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FolderTree size={18} style={{ color: 'var(--portal-accent)' }} />
+                <h3
+                  style={{
+                    fontSize: '0.95rem',
+                    fontWeight: 700,
+                    margin: 0,
+                    color: 'var(--portal-text-primary)',
+                  }}
+                >
+                  Create New Sitemap Page
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewPageModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--portal-text-muted)',
+                  cursor: 'pointer',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleCreateNewPage}
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+            >
+              <div>
+                <label
+                  htmlFor="input-new-page-title"
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--portal-text-secondary)',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
+                >
+                  Page Title
+                </label>
+                <input
+                  id="input-new-page-title"
+                  type="text"
+                  required
+                  placeholder="e.g. Employee Perks & Benefits"
+                  value={newPageTitle}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setNewPageTitle(title);
+                    if (!newPageRoute || newPageRoute.startsWith('/')) {
+                      setNewPageRoute(
+                        '/' +
+                          title
+                            .toLowerCase()
+                            .trim()
+                            .replace(/[^a-z0-9]+/g, '-'),
+                      );
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    background: 'var(--portal-surface-elevated)',
+                    border: '1px solid var(--portal-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '7px 10px',
+                    fontSize: '0.8rem',
+                    color: 'var(--portal-text-primary)',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="input-new-page-route"
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--portal-text-secondary)',
+                    display: 'block',
+                    marginBottom: '4px',
+                  }}
+                >
+                  Route Path
+                </label>
+                <input
+                  id="input-new-page-route"
+                  type="text"
+                  required
+                  placeholder="/perks-benefits"
+                  value={newPageRoute}
+                  onChange={(e) => setNewPageRoute(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'var(--portal-surface-elevated)',
+                    border: '1px solid var(--portal-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '7px 10px',
+                    fontSize: '0.8rem',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--portal-text-primary)',
+                    outline: 'none',
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '8px',
+                  marginTop: '0.5rem',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowNewPageModal(false)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--portal-border)',
+                    background: 'transparent',
+                    color: 'var(--portal-text-secondary)',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  id="btn-confirm-create-page"
+                  type="submit"
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    background: 'var(--portal-accent)',
+                    color: '#fff',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Create & Open Page
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
