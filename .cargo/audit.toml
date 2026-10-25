@@ -1,0 +1,9 @@
+# Cargo Audit Configuration
+
+[advisories]
+ignore = [
+    # RUSTSEC-2023-0071: Marvin Attack in rsa 0.9.10
+    # Transitive dependency of sqlx-postgres 0.8.6.
+    # No fixed upgrade available upstream; platform does not expose RSA PKCS#1 v1.5 decryption directly.
+    "RUSTSEC-2023-0071",
+]

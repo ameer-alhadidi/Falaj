@@ -1,0 +1,22 @@
+{
+  "name": "enterprise-visual-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev:proto1": "pnpm --filter prototype-1-studio dev",
+    "dev:proto2": "pnpm --filter prototype-2-data-mapping dev",
+    "dev:proto3": "pnpm --filter prototype-3-admin dev",
+    "build:proto1": "pnpm --filter prototype-1-studio build",
+    "build:proto2": "pnpm --filter prototype-2-data-mapping build",
+    "build:proto3": "pnpm --filter prototype-3-admin build",
+    "build:packages": "pnpm --filter \"@falaj/*\" build",
+    "build:all": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "format": "prettier --write \"{apps,packages,prototypes}/**/*.{ts,tsx,json,css}\" \"*.json\"",
+    "format:check": "prettier --check \"{apps,packages,prototypes}/**/*.{ts,tsx,json,css}\" \"*.json\""
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "typescript": "^5.8.0"
+  }
+}
