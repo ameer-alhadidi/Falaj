@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import initialEmployees from '../fixtures/employees.json';
 import initialPageData from '../fixtures/page-nodes.json';
+import { COMPLETE_HERO_UI_CATALOG, HeroUIComponentItem } from '../fixtures/heroui-catalog';
 import {
   Layers,
   LayoutGrid,
@@ -56,6 +57,18 @@ import {
   ArrowRight,
   Move,
   Play,
+  Palette,
+  Clock,
+  Key,
+  Radio,
+  ToggleLeft,
+  SlidersHorizontal,
+  Loader2,
+  Gauge,
+  Tag,
+  List,
+  MessageSquare,
+  Maximize2,
 } from 'lucide-react';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
@@ -64,250 +77,7 @@ type Direction = 'ltr' | 'rtl';
 type InspectorTab = 'properties' | 'grid' | 'binding' | 'permissions';
 type CanvasSectionKey = 'header' | 'form' | 'table';
 
-interface HeroUIComponentItem {
-  type: string;
-  category: 'Form Controls' | 'Layout' | 'Interactive' | 'Data Display' | 'Feedback' | 'Navigation';
-  icon: any;
-  desc: string;
-  badge?: 'New' | 'Updated';
-  defaultProps: Record<string, any>;
-  defaultBinding: {
-    field: string;
-    path: string;
-    operation: string;
-    validation?: string;
-  };
-  defaultLayout: {
-    colSpan: number;
-    colStart?: number;
-  };
-}
-
-// Canonical HeroUI-Styled Component Catalog
-const HERO_UI_CATALOG: HeroUIComponentItem[] = [
-  // Form Controls
-  {
-    type: 'Input',
-    category: 'Form Controls',
-    icon: Type,
-    desc: 'Single-line text input field with floating label',
-    defaultProps: { label: 'Full Name', placeholder: 'e.g. Sarah Jenkins', required: true },
-    defaultBinding: {
-      field: 'fullName',
-      path: '$.data.employee.fullName',
-      operation: 'POST /api/employees',
-      validation: 'required, min:2',
-    },
-    defaultLayout: { colSpan: 6 },
-  },
-  {
-    type: 'Select',
-    category: 'Form Controls',
-    icon: Sliders,
-    desc: 'Dropdown selection menu with accessible option list',
-    defaultProps: {
-      label: 'Department',
-      options: ['Engineering', 'Finance', 'Human Resources', 'Operations'],
-      required: true,
-    },
-    defaultBinding: {
-      field: 'departmentId',
-      path: '$.data.employee.departmentId',
-      operation: 'POST /api/employees',
-      validation: 'required',
-    },
-    defaultLayout: { colSpan: 6 },
-  },
-  {
-    type: 'Autocomplete',
-    category: 'Form Controls',
-    badge: 'Updated',
-    icon: Search,
-    desc: 'Searchable auto-suggest input with dynamic filtering',
-    defaultProps: {
-      label: 'Primary Office Location',
-      placeholder: 'Search city or branch...',
-      options: ['Dubai Hub (HQ)', 'Abu Dhabi Tech Park', 'Riyadh Center', 'Muscat Branch'],
-      required: false,
-    },
-    defaultBinding: {
-      field: 'officeLocation',
-      path: '$.data.employee.officeLocation',
-      operation: 'POST /api/employees',
-    },
-    defaultLayout: { colSpan: 6 },
-  },
-  {
-    type: 'Calendar',
-    category: 'Form Controls',
-    badge: 'Updated',
-    icon: CalendarIcon,
-    desc: 'Date picker and appointment range selector',
-    defaultProps: { label: 'Employment Start Date', placeholder: 'YYYY-MM-DD' },
-    defaultBinding: {
-      field: 'startDate',
-      path: '$.data.employee.startDate',
-      operation: 'POST /api/employees',
-      validation: 'iso8601-date',
-    },
-    defaultLayout: { colSpan: 6 },
-  },
-  {
-    type: 'Checkbox',
-    category: 'Form Controls',
-    badge: 'Updated',
-    icon: CheckSquare,
-    desc: 'Boolean agreement checkbox toggle',
-    defaultProps: { label: 'Grant corporate VPN and production cluster access', checked: true },
-    defaultBinding: {
-      field: 'hasVpnAccess',
-      path: '$.data.employee.security.vpn',
-      operation: 'POST /api/employees',
-    },
-    defaultLayout: { colSpan: 12 },
-  },
-  {
-    type: 'CheckboxGroup',
-    category: 'Form Controls',
-    badge: 'Updated',
-    icon: CheckCircle2,
-    desc: 'Group of related multi-selection check inputs',
-    defaultProps: {
-      label: 'Employee Benefit Enrolments',
-      options: ['Medical Insurance', 'Remote Equipment Stipend', 'Transit Pass'],
-    },
-    defaultBinding: {
-      field: 'enrolledBenefits',
-      path: '$.data.employee.benefits',
-      operation: 'POST /api/employees',
-    },
-    defaultLayout: { colSpan: 12 },
-  },
-
-  // Interactive
-  {
-    type: 'Button',
-    category: 'Interactive',
-    icon: MousePointer,
-    desc: 'Action trigger or form submit mutation',
-    defaultProps: { label: 'Save & Dispatch Record', variant: 'primary', isSubmit: true },
-    defaultBinding: {
-      field: 'submitTrigger',
-      path: '$.action.submit',
-      operation: 'POST /api/employees',
-    },
-    defaultLayout: { colSpan: 12 },
-  },
-  {
-    type: 'Link',
-    category: 'Interactive',
-    icon: LinkIcon,
-    desc: 'Internal or external hyperlink anchor',
-    defaultProps: { text: 'View Compliance Policy', href: '/compliance/policy-2026' },
-    defaultBinding: { field: 'href', path: '$.links.compliance', operation: 'GET /api/policy' },
-    defaultLayout: { colSpan: 6 },
-  },
-
-  // Layout
-  {
-    type: 'Card',
-    category: 'Layout',
-    icon: Box,
-    desc: 'Elevated surface container wrapper',
-    defaultProps: { title: 'Card Container', bordered: true },
-    defaultBinding: { field: '', path: '', operation: '' },
-    defaultLayout: { colSpan: 12 },
-  },
-  {
-    type: 'Accordion',
-    category: 'Layout',
-    icon: ChevronDown,
-    desc: 'Vertically stacked collapsible disclosure item',
-    defaultProps: {
-      title: 'Security Clearance & Background Check',
-      content:
-        'Dual-approval required for root access. Background verification logged in audit registry.',
-    },
-    defaultBinding: { field: '', path: '', operation: '' },
-    defaultLayout: { colSpan: 12 },
-  },
-  {
-    type: 'Divider',
-    category: 'Layout',
-    icon: Minus,
-    desc: 'Visual separator dividing form segments',
-    defaultProps: { spacing: 'medium' },
-    defaultBinding: { field: '', path: '', operation: '' },
-    defaultLayout: { colSpan: 12 },
-  },
-
-  // Feedback
-  {
-    type: 'Alert',
-    category: 'Feedback',
-    icon: AlertCircle,
-    desc: 'Contextual notification and audit warning banner',
-    defaultProps: {
-      title: 'Dual-Approval Policy Enforced',
-      message:
-        'Records created in this form will trigger a Keycloak workflow review before publication.',
-      variant: 'warning',
-    },
-    defaultBinding: { field: '', path: '', operation: '' },
-    defaultLayout: { colSpan: 12 },
-  },
-
-  // Data Display
-  {
-    type: 'AvatarGroup',
-    category: 'Data Display',
-    badge: 'New',
-    icon: Users,
-    desc: 'Stacked user avatar collection with presence ring',
-    defaultProps: { count: 4, names: ['Ahmed K.', 'Sara M.', 'Tariq N.', 'Laila B.'] },
-    defaultBinding: {
-      field: 'reviewers',
-      path: '$.data.assignedReviewers',
-      operation: 'GET /api/users',
-    },
-    defaultLayout: { colSpan: 6 },
-  },
-  {
-    type: 'Badge',
-    category: 'Data Display',
-    icon: Sparkles,
-    desc: 'Status pill badge with variant coloring',
-    defaultProps: { label: 'Active Status', variant: 'success' },
-    defaultBinding: {
-      field: 'statusBadge',
-      path: '$.data.status',
-      operation: 'GET /api/employees',
-    },
-    defaultLayout: { colSpan: 6 },
-  },
-  {
-    type: 'Table',
-    category: 'Data Display',
-    icon: TableIcon,
-    desc: 'Data-bound repeating enterprise table',
-    defaultProps: { emptyText: 'No records found' },
-    defaultBinding: { field: 'items', path: '$.data', operation: 'GET /api/employees' },
-    defaultLayout: { colSpan: 12 },
-  },
-
-  // Navigation
-  {
-    type: 'Breadcrumbs',
-    category: 'Navigation',
-    icon: ChevronRight,
-    desc: 'Hierarchical navigation path breadcrumbs',
-    defaultProps: { items: ['Enterprise HR', 'Managers Directory', 'Onboard Member'] },
-    defaultBinding: { field: '', path: '', operation: '' },
-    defaultLayout: { colSpan: 12 },
-  },
-];
-
-// Initial Form Children Fields
+// Initial Seed Form Fields
 const INITIAL_FORM_FIELDS = [
   {
     id: 'node-field-fullname',
@@ -393,10 +163,10 @@ const INITIAL_FORM_FIELDS = [
 ];
 
 export default function StudioPage() {
-  // Studio Mode State: Design Mode vs Live Preview Mode
+  // Studio Mode: Design Mode vs Live Preview Mode
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
 
-  // Studio Viewport & Theme States
+  // Viewport, Theme & Layout
   const [viewport, setViewport] = useState<Viewport>('desktop');
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
   const [direction, setDirection] = useState<Direction>('ltr');
@@ -405,21 +175,21 @@ export default function StudioPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string>('node-field-fullname');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties');
 
-  // Canvas Section Ordering State (Header, Form, Table)
+  // Canvas Top-Level Section Order
   const [sectionOrder, setSectionOrder] = useState<CanvasSectionKey[]>(['header', 'form', 'table']);
 
-  // Moving & Drag-Reordering State for Form Fields
+  // Move / Reorder States
   const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null);
   const [dragOverFieldId, setDragOverFieldId] = useState<string | null>(null);
   const [dropIndicatorSide, setDropIndicatorSide] = useState<'before' | 'after'>('after');
 
-  // HeroUI Drawer & Search
+  // HeroUI Drawer & Filtering
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [draggedComponentType, setDraggedComponentType] = useState<string | null>(null);
   const [isDropOverForm, setIsDropOverForm] = useState<boolean>(false);
 
-  // Live Interactive Preview State for Form Controls
+  // Live Interactive Preview State for Form Inputs
   const [liveFormValues, setLiveFormValues] = useState<Record<string, any>>({
     'node-field-fullname': 'Sarah Jenkins',
     'node-field-dept': 'Engineering',
@@ -428,26 +198,17 @@ export default function StudioPage() {
   });
   const [submittedPreviewData, setSubmittedPreviewData] = useState<any | null>(null);
 
-  // 3-Tier Persona: Administrator Governance State
+  // 3-Tier Persona: Administrator Governance State for all 72 components
   const [showAdminGovernanceModal, setShowAdminGovernanceModal] = useState<boolean>(false);
-  const [adminAllowedComponents, setAdminAllowedComponents] = useState<Record<string, boolean>>({
-    Input: true,
-    Select: true,
-    Autocomplete: true,
-    Calendar: true,
-    Checkbox: true,
-    CheckboxGroup: true,
-    Button: true,
-    Link: true,
-    Card: true,
-    Accordion: true,
-    Divider: true,
-    Alert: true,
-    AvatarGroup: true,
-    Badge: true,
-    Table: true,
-    Breadcrumbs: true,
-  });
+  const [adminAllowedComponents, setAdminAllowedComponents] = useState<Record<string, boolean>>(
+    () => {
+      const initialAllowed: Record<string, boolean> = {};
+      COMPLETE_HERO_UI_CATALOG.forEach((c) => {
+        initialAllowed[c.type] = true;
+      });
+      return initialAllowed;
+    },
+  );
 
   // Page Nodes State
   const [formFields, setFormFields] = useState<any[]>(INITIAL_FORM_FIELDS);
@@ -468,7 +229,7 @@ export default function StudioPage() {
     document.documentElement.setAttribute('dir', direction);
   }, [direction]);
 
-  // Global Keyboard Shortcuts (Esc to exit preview or close modal)
+  // Global Keyboard Shortcuts (Esc to exit preview or close modal, P to toggle preview)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -477,26 +238,16 @@ export default function StudioPage() {
         } else if (isPreviewMode) {
           setIsPreviewMode(false);
         }
+      } else if (
+        (e.key === 'p' || e.key === 'P') &&
+        !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)
+      ) {
+        setIsPreviewMode((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPreviewMode, showAdminGovernanceModal]);
-
-  // Sitemap Pages
-  const sitemapPages = [
-    { id: 'p1', title: 'Home', route: '/', status: 'published' },
-    { id: 'p2', title: 'Managers Directory', route: '/managers', status: 'draft', active: true },
-    { id: 'p3', title: 'Employee Directory', route: '/employees', status: 'published' },
-    {
-      id: 'p4',
-      title: 'Payroll & Compensation',
-      route: '/payroll',
-      status: 'draft',
-      protected: true,
-    },
-    { id: 'p5', title: 'Admin Settings', route: '/admin', status: 'published', protected: true },
-  ];
 
   // Helper to find selected node
   const findNode = (nodes: any[], id: string): any => {
@@ -532,8 +283,8 @@ export default function StudioPage() {
 
   const selectedNode = findNode(pageNodes, selectedNodeId);
 
-  // Update Node Property
-  const updateNodeProperty = (key: string, value: any) => {
+  // Push to Undo Stack Helper
+  const pushUndoSnapshot = () => {
     setUndoStack((prev) => [
       ...prev,
       {
@@ -544,6 +295,11 @@ export default function StudioPage() {
     ]);
     setRedoStack([]);
     setSaveStatus('Unsaved changes');
+  };
+
+  // Update Node Property
+  const updateNodeProperty = (key: string, value: any) => {
+    pushUndoSnapshot();
 
     if (formFields.some((f) => f.id === selectedNodeId)) {
       setFormFields((prev) =>
@@ -577,16 +333,7 @@ export default function StudioPage() {
 
   // Update Node Layout (Grid ColSpan, ColStart)
   const updateNodeLayout = (key: string, value: any) => {
-    setUndoStack((prev) => [
-      ...prev,
-      {
-        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-        formFields: [...formFields],
-        sectionOrder: [...sectionOrder],
-      },
-    ]);
-    setRedoStack([]);
-    setSaveStatus('Unsaved changes');
+    pushUndoSnapshot();
 
     if (formFields.some((f) => f.id === selectedNodeId)) {
       setFormFields((prev) =>
@@ -620,16 +367,7 @@ export default function StudioPage() {
 
   // Update Node Data-Binding
   const updateNodeBinding = (key: string, value: any) => {
-    setUndoStack((prev) => [
-      ...prev,
-      {
-        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-        formFields: [...formFields],
-        sectionOrder: [...sectionOrder],
-      },
-    ]);
-    setRedoStack([]);
-    setSaveStatus('Unsaved changes');
+    pushUndoSnapshot();
 
     if (formFields.some((f) => f.id === selectedNodeId)) {
       setFormFields((prev) =>
@@ -643,47 +381,24 @@ export default function StudioPage() {
     }
   };
 
-  // Move Form Field in Array
+  // Move Form Field in Sequence
   const moveFormField = (fromIndex: number, toIndex: number) => {
     if (toIndex < 0 || toIndex >= formFields.length) return;
-    setUndoStack((prev) => [
-      ...prev,
-      {
-        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-        formFields: [...formFields],
-        sectionOrder: [...sectionOrder],
-      },
-    ]);
-    setRedoStack([]);
+    pushUndoSnapshot();
+
     const updated = [...formFields];
     const [moved] = updated.splice(fromIndex, 1);
     updated.splice(toIndex, 0, moved);
     setFormFields(updated);
-    setSaveStatus('Unsaved changes');
   };
 
   // Reorder Form Fields via Drag and Drop
   const handleReorderFormField = (sourceId: string, targetId: string, side: 'before' | 'after') => {
     if (sourceId === targetId) return;
     const sourceIndex = formFields.findIndex((f) => f.id === sourceId);
-    let targetIndex = formFields.findIndex((f) => f.id === targetId);
-    if (sourceIndex === -1 || targetIndex === -1) return;
+    if (sourceIndex === -1) return;
 
-    if (side === 'after' && sourceIndex < targetIndex) {
-      // insertion after target
-    } else if (side === 'before' && sourceIndex > targetIndex) {
-      // insertion before target
-    }
-
-    setUndoStack((prev) => [
-      ...prev,
-      {
-        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-        formFields: [...formFields],
-        sectionOrder: [...sectionOrder],
-      },
-    ]);
-    setRedoStack([]);
+    pushUndoSnapshot();
 
     const updated = [...formFields];
     const [moved] = updated.splice(sourceIndex, 1);
@@ -692,40 +407,21 @@ export default function StudioPage() {
     updated.splice(insertIndex, 0, moved);
 
     setFormFields(updated);
-    setSaveStatus('Unsaved changes');
   };
 
   // Move Section Up or Down on Canvas
-  const moveCanvasSection = (sectionKey: CanvasSectionKey, direction: 'up' | 'down') => {
+  const moveCanvasSection = (sectionKey: CanvasSectionKey, dir: 'up' | 'down') => {
     const currentIndex = sectionOrder.indexOf(sectionKey);
-    if (direction === 'up' && currentIndex > 0) {
-      setUndoStack((prev) => [
-        ...prev,
-        {
-          pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-          formFields: [...formFields],
-          sectionOrder: [...sectionOrder],
-        },
-      ]);
-      setRedoStack([]);
+    if (dir === 'up' && currentIndex > 0) {
+      pushUndoSnapshot();
       const next = [...sectionOrder];
       [next[currentIndex - 1], next[currentIndex]] = [next[currentIndex], next[currentIndex - 1]];
       setSectionOrder(next);
-      setSaveStatus('Unsaved changes');
-    } else if (direction === 'down' && currentIndex < sectionOrder.length - 1) {
-      setUndoStack((prev) => [
-        ...prev,
-        {
-          pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-          formFields: [...formFields],
-          sectionOrder: [...sectionOrder],
-        },
-      ]);
-      setRedoStack([]);
+    } else if (dir === 'down' && currentIndex < sectionOrder.length - 1) {
+      pushUndoSnapshot();
       const next = [...sectionOrder];
       [next[currentIndex + 1], next[currentIndex]] = [next[currentIndex], next[currentIndex + 1]];
       setSectionOrder(next);
-      setSaveStatus('Unsaved changes');
     }
   };
 
@@ -738,7 +434,7 @@ export default function StudioPage() {
       return;
     }
 
-    const catalogItem = HERO_UI_CATALOG.find((c) => c.type === componentType);
+    const catalogItem = COMPLETE_HERO_UI_CATALOG.find((c) => c.type === componentType);
     if (!catalogItem) return;
 
     const newId = `node-form-${componentType.toLowerCase()}-${Date.now().toString().slice(-4)}`;
@@ -754,37 +450,19 @@ export default function StudioPage() {
       binding: { ...catalogItem.defaultBinding },
     };
 
-    setUndoStack((prev) => [
-      ...prev,
-      {
-        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-        formFields: [...formFields],
-        sectionOrder: [...sectionOrder],
-      },
-    ]);
-    setRedoStack([]);
+    pushUndoSnapshot();
     setFormFields((prev) => [...prev, newFieldNode]);
     setSelectedNodeId(newId);
-    setSaveStatus('Unsaved changes');
   };
 
   // Delete Form Component
   const handleDeleteFormField = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setUndoStack((prev) => [
-      ...prev,
-      {
-        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
-        formFields: [...formFields],
-        sectionOrder: [...sectionOrder],
-      },
-    ]);
-    setRedoStack([]);
+    pushUndoSnapshot();
     setFormFields((prev) => prev.filter((f) => f.id !== id));
     if (selectedNodeId === id) {
       setSelectedNodeId('node-manager-form');
     }
-    setSaveStatus('Unsaved changes');
   };
 
   // Undo / Redo Actions
@@ -840,8 +518,8 @@ export default function StudioPage() {
     setSubmittedPreviewData(payload);
   };
 
-  // Filter HeroUI catalog
-  const filteredCatalog = HERO_UI_CATALOG.filter((item) => {
+  // Filter Catalog
+  const filteredCatalog = COMPLETE_HERO_UI_CATALOG.filter((item) => {
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
     const matchesSearch =
       item.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -864,7 +542,7 @@ export default function StudioPage() {
   };
 
   const allowedCount = Object.values(adminAllowedComponents).filter(Boolean).length;
-  const totalCount = HERO_UI_CATALOG.length;
+  const totalCount = COMPLETE_HERO_UI_CATALOG.length;
 
   return (
     <div
@@ -936,7 +614,9 @@ export default function StudioPage() {
                   fontWeight: 700,
                 }}
               >
-                {isPreviewMode ? 'Interactive Preview Mode' : 'Phase 3 Studio (Design Mode)'}
+                {isPreviewMode
+                  ? 'Interactive Preview Mode'
+                  : `Phase 3 Studio (${totalCount} HeroUI v3 Components)`}
               </span>
             </div>
             <div
@@ -961,9 +641,8 @@ export default function StudioPage() {
           </div>
         </div>
 
-        {/* Center: Viewport Controls, Undo/Redo & Mode Switcher */}
+        {/* Center: Viewport Controls, Undo/Redo & Admin Governance */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          {/* Undo / Redo (Shown in Design Mode) */}
           {!isPreviewMode && (
             <div
               style={{
@@ -1017,7 +696,7 @@ export default function StudioPage() {
             </div>
           )}
 
-          {/* Viewport Selectors (Active in both Design and Preview modes) */}
+          {/* Viewport Selectors */}
           <div
             style={{
               display: 'flex',
@@ -1083,7 +762,6 @@ export default function StudioPage() {
             </button>
           </div>
 
-          {/* Grid Guides Toggle (Design Mode Only) */}
           {!isPreviewMode && (
             <button
               onClick={() => setShowGrid(!showGrid)}
@@ -1108,7 +786,6 @@ export default function StudioPage() {
             </button>
           )}
 
-          {/* 3-Tier Administrator Governance Trigger Button (Design Mode Only) */}
           {!isPreviewMode && (
             <button
               onClick={() => setShowAdminGovernanceModal(true)}
@@ -1145,9 +822,9 @@ export default function StudioPage() {
           )}
         </div>
 
-        {/* Right Actions: Preview Mode Toggle, RTL, Theme, Publish */}
+        {/* Right Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          {/* PREVIEW MODE TOGGLE BUTTON */}
+          {/* PREVIEW MODE TOGGLE */}
           <button
             onClick={() => setIsPreviewMode(!isPreviewMode)}
             title={isPreviewMode ? 'Exit Preview Mode (Esc)' : 'Enter Live Preview Mode (P)'}
@@ -1215,13 +892,12 @@ export default function StudioPage() {
             {themeMode === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
-          {/* Publish Button (Design Mode Only) */}
           {!isPreviewMode && (
             <button
               onClick={() => {
                 setSaveStatus('Saved');
                 alert(
-                  'Page published successfully to https://hr-portal.sites.example.com/managers (Release Manifest #104 generated with HeroUI Form & Table nodes)',
+                  `Page published successfully to https://hr-portal.sites.example.com/managers (Release Manifest #105 generated with ${totalCount} HeroUI v3 nodes)`,
                 );
               }}
               style={{
@@ -1274,8 +950,8 @@ export default function StudioPage() {
             />
             <span style={{ fontWeight: 700, color: 'var(--portal-success)' }}>Preview Mode:</span>
             <span>
-              All studio guides, outlines, and editor chrome are hidden. Form controls and links are
-              fully interactive.
+              All studio guides, outlines, and editor chrome are hidden. All {totalCount} HeroUI
+              components are fully interactive.
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1301,13 +977,13 @@ export default function StudioPage() {
         </div>
       )}
 
-      {/* Main Studio Body: 3-Pane Layout (Sidebars hidden in Preview Mode) */}
+      {/* Main Studio Body: 3-Pane Layout */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Left Panel: HeroUI Component Drawer (Hidden in Preview Mode) */}
+        {/* Left Panel: HeroUI 72-Component Drawer */}
         {!isPreviewMode && (
           <aside
             style={{
-              width: '290px',
+              width: '300px',
               background: 'var(--portal-surface)',
               borderInlineEnd: '1px solid var(--portal-border)',
               display: 'flex',
@@ -1350,7 +1026,7 @@ export default function StudioPage() {
                     fontFamily: 'var(--font-mono)',
                   }}
                 >
-                  HeroUI Palette
+                  HeroUI v3 ({totalCount})
                 </span>
               </div>
 
@@ -1368,7 +1044,7 @@ export default function StudioPage() {
                 />
                 <input
                   type="text"
-                  placeholder="Search components..."
+                  placeholder="Search 72 components..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
@@ -1458,7 +1134,15 @@ export default function StudioPage() {
                 background: 'var(--portal-surface-elevated)',
               }}
             >
-              {['Form Controls', 'Layout', 'Data Display', 'Interactive', 'Feedback'].map((cat) => (
+              {[
+                'Form & Inputs',
+                'Pickers & Selectors',
+                'Layout & Structure',
+                'Interactive',
+                'Data Display',
+                'Feedback',
+                'Navigation',
+              ].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(selectedCategory === cat ? 'all' : cat)}
@@ -1752,7 +1436,7 @@ export default function StudioPage() {
               flexDirection: 'column',
             }}
           >
-            {/* 12-Column Guide Overlay (Suppressed in Preview Mode) */}
+            {/* 12-Column Guide Overlay */}
             {showGrid && !isPreviewMode && (
               <div
                 style={{
@@ -1793,7 +1477,7 @@ export default function StudioPage() {
               </div>
             )}
 
-            {/* Canvas Sections Container rendered according to sectionOrder */}
+            {/* Canvas Sections Container */}
             <div
               style={{
                 padding: 'var(--space-6)',
@@ -1823,7 +1507,6 @@ export default function StudioPage() {
                         position: 'relative',
                       }}
                     >
-                      {/* Section Move Controls (Design Mode Only) */}
                       {!isPreviewMode && (
                         <div
                           style={{
@@ -1941,8 +1624,9 @@ export default function StudioPage() {
                           maxWidth: '720px',
                         }}
                       >
-                        Demonstrates live drag-and-drop element repositioning, section reordering,
-                        and realistic interactive preview mode with live form submissions.
+                        Powered by 72 HeroUI v3 accessible components. Demonstrates drag-and-drop
+                        assembly, element movement, Administrator governance, and interactive live
+                        preview mode.
                       </p>
                     </div>
                   );
@@ -1988,7 +1672,7 @@ export default function StudioPage() {
                         transition: 'all 0.2s ease',
                       }}
                     >
-                      {/* Form Component Header & Badges */}
+                      {/* Form Header */}
                       <div
                         style={{
                           padding: '0.65rem 1rem',
@@ -2033,7 +1717,6 @@ export default function StudioPage() {
                                 Mutation: POST /api/employees
                               </span>
 
-                              {/* Section Reorder Buttons */}
                               <div
                                 style={{
                                   display: 'flex',
@@ -2119,7 +1802,7 @@ export default function StudioPage() {
                         </div>
                       </div>
 
-                      {/* Form Fields Canvas (Sub-grid 12 Columns with Drag Reordering) */}
+                      {/* Form Fields Canvas */}
                       <form onSubmit={handleLiveFormSubmit} style={{ padding: '1.25rem' }}>
                         <div
                           style={{
@@ -2194,7 +1877,6 @@ export default function StudioPage() {
                                     : 'none',
                                 }}
                               >
-                                {/* Field Header Toolbar with Move Controls (Design Mode Only) */}
                                 {!isPreviewMode && (
                                   <div
                                     style={{
@@ -2232,11 +1914,9 @@ export default function StudioPage() {
                                       <span>Span {field.layout.colSpan} Col</span>
                                     </div>
 
-                                    {/* Move earlier/later arrow controls & delete */}
                                     <div
                                       style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
                                     >
-                                      {/* Move Left / Earlier */}
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -2262,7 +1942,6 @@ export default function StudioPage() {
                                         <ChevronUp size={11} />
                                       </button>
 
-                                      {/* Move Right / Later */}
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -2311,551 +1990,19 @@ export default function StudioPage() {
                                   </div>
                                 )}
 
-                                {/* Field Visual Rendering according to HeroUI styling */}
-                                {field.type === 'Input' && (
-                                  <div>
-                                    <label
-                                      style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        color: 'var(--portal-text-primary)',
-                                        display: 'block',
-                                        marginBottom: '3px',
-                                      }}
-                                    >
-                                      {field.props.label || 'Input Field'}
-                                      {field.props.required && (
-                                        <span style={{ color: 'var(--portal-error)' }}> *</span>
-                                      )}
-                                    </label>
-                                    <input
-                                      type="text"
-                                      placeholder={field.props.placeholder}
-                                      value={
-                                        liveFormValues[field.id] !== undefined
-                                          ? liveFormValues[field.id]
-                                          : field.props.placeholder || ''
-                                      }
-                                      readOnly={!isPreviewMode}
-                                      onChange={(e) =>
-                                        setLiveFormValues((prev) => ({
-                                          ...prev,
-                                          [field.id]: e.target.value,
-                                        }))
-                                      }
-                                      style={{
-                                        width: '100%',
-                                        background: 'var(--portal-surface-elevated)',
-                                        border: '1px solid var(--portal-border)',
-                                        borderRadius: 'var(--radius-sm)',
-                                        padding: '6px 10px',
-                                        fontSize: '0.8rem',
-                                        color: 'var(--portal-text-primary)',
-                                        outline: isPreviewMode ? undefined : 'none',
-                                      }}
-                                    />
-                                  </div>
-                                )}
-
-                                {field.type === 'Select' && (
-                                  <div>
-                                    <label
-                                      style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        color: 'var(--portal-text-primary)',
-                                        display: 'block',
-                                        marginBottom: '3px',
-                                      }}
-                                    >
-                                      {field.props.label || 'Select Dropdown'}
-                                    </label>
-                                    {isPreviewMode ? (
-                                      <select
-                                        value={
-                                          liveFormValues[field.id] || field.props.options?.[0] || ''
-                                        }
-                                        onChange={(e) =>
-                                          setLiveFormValues((prev) => ({
-                                            ...prev,
-                                            [field.id]: e.target.value,
-                                          }))
-                                        }
-                                        style={{
-                                          width: '100%',
-                                          background: 'var(--portal-surface-elevated)',
-                                          border: '1px solid var(--portal-border)',
-                                          borderRadius: 'var(--radius-sm)',
-                                          padding: '6px 10px',
-                                          fontSize: '0.8rem',
-                                          color: 'var(--portal-text-primary)',
-                                        }}
-                                      >
-                                        {(field.props.options || []).map((opt: string) => (
-                                          <option key={opt} value={opt}>
-                                            {opt}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    ) : (
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          background: 'var(--portal-surface-elevated)',
-                                          border: '1px solid var(--portal-border)',
-                                          borderRadius: 'var(--radius-sm)',
-                                          padding: '6px 10px',
-                                          fontSize: '0.8rem',
-                                          color: 'var(--portal-text-primary)',
-                                        }}
-                                      >
-                                        <span>
-                                          {field.props.options?.[0] || 'Choose an option...'}
-                                        </span>
-                                        <ChevronDown
-                                          size={14}
-                                          style={{ color: 'var(--portal-text-muted)' }}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {field.type === 'Autocomplete' && (
-                                  <div>
-                                    <label
-                                      style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        color: 'var(--portal-text-primary)',
-                                        display: 'block',
-                                        marginBottom: '3px',
-                                      }}
-                                    >
-                                      {field.props.label || 'Autocomplete'}
-                                    </label>
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        background: 'var(--portal-surface-elevated)',
-                                        border: '1px solid var(--portal-border)',
-                                        borderRadius: 'var(--radius-sm)',
-                                        padding: '6px 10px',
-                                        fontSize: '0.8rem',
-                                        color: 'var(--portal-text-muted)',
-                                        gap: '6px',
-                                      }}
-                                    >
-                                      <Search size={13} />
-                                      <input
-                                        type="text"
-                                        placeholder={
-                                          field.props.placeholder || 'Type to search options...'
-                                        }
-                                        value={liveFormValues[field.id] || ''}
-                                        readOnly={!isPreviewMode}
-                                        onChange={(e) =>
-                                          setLiveFormValues((prev) => ({
-                                            ...prev,
-                                            [field.id]: e.target.value,
-                                          }))
-                                        }
-                                        style={{
-                                          border: 'none',
-                                          background: 'transparent',
-                                          outline: 'none',
-                                          width: '100%',
-                                          fontSize: '0.8rem',
-                                          color: 'var(--portal-text-primary)',
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-
-                                {field.type === 'Calendar' && (
-                                  <div>
-                                    <label
-                                      style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        color: 'var(--portal-text-primary)',
-                                        display: 'block',
-                                        marginBottom: '3px',
-                                      }}
-                                    >
-                                      {field.props.label || 'Calendar Date'}
-                                    </label>
-                                    {isPreviewMode ? (
-                                      <input
-                                        type="date"
-                                        value={liveFormValues[field.id] || '2026-11-01'}
-                                        onChange={(e) =>
-                                          setLiveFormValues((prev) => ({
-                                            ...prev,
-                                            [field.id]: e.target.value,
-                                          }))
-                                        }
-                                        style={{
-                                          width: '100%',
-                                          background: 'var(--portal-surface-elevated)',
-                                          border: '1px solid var(--portal-border)',
-                                          borderRadius: 'var(--radius-sm)',
-                                          padding: '6px 10px',
-                                          fontSize: '0.8rem',
-                                          color: 'var(--portal-text-primary)',
-                                        }}
-                                      />
-                                    ) : (
-                                      <div
-                                        style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          background: 'var(--portal-surface-elevated)',
-                                          border: '1px solid var(--portal-border)',
-                                          borderRadius: 'var(--radius-sm)',
-                                          padding: '6px 10px',
-                                          fontSize: '0.8rem',
-                                          color: 'var(--portal-text-secondary)',
-                                        }}
-                                      >
-                                        <span>2026-11-01</span>
-                                        <CalendarIcon
-                                          size={14}
-                                          style={{ color: 'var(--portal-accent)' }}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {field.type === 'Checkbox' && (
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '8px',
-                                      padding: '4px 0',
-                                      cursor: isPreviewMode ? 'pointer' : 'default',
-                                    }}
-                                    onClick={() => {
-                                      if (isPreviewMode) {
-                                        setLiveFormValues((prev) => ({
-                                          ...prev,
-                                          [field.id]: !prev[field.id],
-                                        }));
-                                      }
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        width: '16px',
-                                        height: '16px',
-                                        borderRadius: '4px',
-                                        background: liveFormValues[field.id]
-                                          ? 'var(--portal-accent)'
-                                          : 'transparent',
-                                        border: `1px solid ${liveFormValues[field.id] ? 'var(--portal-accent)' : 'var(--portal-border)'}`,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#fff',
-                                      }}
-                                    >
-                                      {liveFormValues[field.id] && <Check size={11} />}
-                                    </div>
-                                    <span
-                                      style={{
-                                        fontSize: '0.775rem',
-                                        color: 'var(--portal-text-primary)',
-                                      }}
-                                    >
-                                      {field.props.label || 'Checkbox Agreement'}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {field.type === 'CheckboxGroup' && (
-                                  <div>
-                                    <label
-                                      style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        color: 'var(--portal-text-primary)',
-                                        display: 'block',
-                                        marginBottom: '4px',
-                                      }}
-                                    >
-                                      {field.props.label || 'Checkbox Options Group'}
-                                    </label>
-                                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                      {(field.props.options || ['Option A', 'Option B']).map(
-                                        (opt: string) => (
-                                          <div
-                                            key={opt}
-                                            style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: '6px',
-                                            }}
-                                          >
-                                            <div
-                                              style={{
-                                                width: '14px',
-                                                height: '14px',
-                                                borderRadius: '3px',
-                                                border: '1px solid var(--portal-accent)',
-                                                background: 'rgba(59, 130, 246, 0.15)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'var(--portal-accent)',
-                                              }}
-                                            >
-                                              <Check size={9} />
-                                            </div>
-                                            <span
-                                              style={{
-                                                fontSize: '0.725rem',
-                                                color: 'var(--portal-text-secondary)',
-                                              }}
-                                            >
-                                              {opt}
-                                            </span>
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {field.type === 'Button' && (
-                                  <button
-                                    type={isPreviewMode ? 'submit' : 'button'}
-                                    style={{
-                                      background: 'var(--portal-accent)',
-                                      color: '#fff',
-                                      border: 'none',
-                                      borderRadius: 'var(--radius-sm)',
-                                      padding: '8px 16px',
-                                      fontSize: '0.8rem',
-                                      fontWeight: 600,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: '6px',
-                                    }}
-                                  >
-                                    <MousePointer size={14} />{' '}
-                                    {field.props.label || 'Submit Action'}
-                                  </button>
-                                )}
-
-                                {field.type === 'Alert' && (
-                                  <div
-                                    style={{
-                                      background: 'rgba(245, 158, 11, 0.12)',
-                                      border: '1px solid rgba(245, 158, 11, 0.3)',
-                                      borderRadius: 'var(--radius-sm)',
-                                      padding: '8px 10px',
-                                      display: 'flex',
-                                      gap: '8px',
-                                      alignItems: 'flex-start',
-                                    }}
-                                  >
-                                    <AlertCircle
-                                      size={15}
-                                      style={{ color: 'var(--portal-warning)', flexShrink: 0 }}
-                                    />
-                                    <div>
-                                      <div
-                                        style={{
-                                          fontSize: '0.75rem',
-                                          fontWeight: 700,
-                                          color: 'var(--portal-warning)',
-                                        }}
-                                      >
-                                        {field.props.title || 'Form Alert'}
-                                      </div>
-                                      <div
-                                        style={{
-                                          fontSize: '0.7rem',
-                                          color: 'var(--portal-text-secondary)',
-                                        }}
-                                      >
-                                        {field.props.message}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {field.type === 'AvatarGroup' && (
-                                  <div>
-                                    <div
-                                      style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        marginBottom: '4px',
-                                      }}
-                                    >
-                                      Assigned Reviewers
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                      {(field.props.names || ['U1', 'U2', 'U3']).map(
-                                        (name: string, avIdx: number) => (
-                                          <div
-                                            key={name}
-                                            style={{
-                                              width: '28px',
-                                              height: '28px',
-                                              borderRadius: '50%',
-                                              background: `hsl(${avIdx * 70 + 200}, 70%, 50%)`,
-                                              color: '#fff',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              fontSize: '0.65rem',
-                                              fontWeight: 700,
-                                              border: '2px solid var(--portal-surface)',
-                                              marginInlineStart: avIdx > 0 ? '-8px' : 0,
-                                            }}
-                                          >
-                                            {name.slice(0, 1)}
-                                          </div>
-                                        ),
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {field.type === 'Divider' && (
-                                  <div
-                                    style={{
-                                      height: '1px',
-                                      background: 'var(--portal-border)',
-                                      margin: '4px 0',
-                                    }}
-                                  />
-                                )}
-
-                                {field.type === 'Accordion' && (
-                                  <div
-                                    style={{
-                                      background: 'var(--portal-surface-elevated)',
-                                      border: '1px solid var(--portal-border)',
-                                      borderRadius: 'var(--radius-sm)',
-                                      padding: '8px 10px',
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      <span>{field.props.title}</span>
-                                      <ChevronDown size={14} />
-                                    </div>
-                                    <div
-                                      style={{
-                                        fontSize: '0.7rem',
-                                        color: 'var(--portal-text-muted)',
-                                        marginTop: '4px',
-                                      }}
-                                    >
-                                      {field.props.content}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {field.type === 'Card' && (
-                                  <div
-                                    style={{
-                                      background: 'var(--portal-surface-elevated)',
-                                      border: '1px solid var(--portal-border)',
-                                      borderRadius: 'var(--radius-sm)',
-                                      padding: '8px 10px',
-                                    }}
-                                  >
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>
-                                      {field.props.title}
-                                    </div>
-                                    <div
-                                      style={{
-                                        fontSize: '0.7rem',
-                                        color: 'var(--portal-text-muted)',
-                                        marginTop: '2px',
-                                      }}
-                                    >
-                                      Embedded nested card container
-                                    </div>
-                                  </div>
-                                )}
-
-                                {field.type === 'Badge' && (
-                                  <div>
-                                    <span
-                                      style={{
-                                        fontSize: '0.725rem',
-                                        background: 'rgba(16, 185, 129, 0.15)',
-                                        color: 'var(--portal-success)',
-                                        padding: '3px 8px',
-                                        borderRadius: 'var(--radius-sm)',
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      {field.props.label}
-                                    </span>
-                                  </div>
-                                )}
-
-                                {field.type === 'Breadcrumbs' && (
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px',
-                                      fontSize: '0.725rem',
-                                    }}
-                                  >
-                                    {(field.props.items || []).map(
-                                      (item: string, bcIdx: number) => (
-                                        <React.Fragment key={item}>
-                                          {bcIdx > 0 && (
-                                            <ChevronRight
-                                              size={12}
-                                              style={{ color: 'var(--portal-text-muted)' }}
-                                            />
-                                          )}
-                                          <span
-                                            style={{
-                                              color:
-                                                bcIdx === field.props.items.length - 1
-                                                  ? 'var(--portal-accent)'
-                                                  : 'var(--portal-text-muted)',
-                                            }}
-                                          >
-                                            {item}
-                                          </span>
-                                        </React.Fragment>
-                                      ),
-                                    )}
-                                  </div>
+                                {/* RENDER DYNAMIC HEROUI V3 COMPONENT */}
+                                {renderHeroUIComponent(
+                                  field,
+                                  isPreviewMode,
+                                  liveFormValues,
+                                  setLiveFormValues,
                                 )}
                               </div>
                             );
                           })}
                         </div>
 
-                        {/* Visual Drop Zone Highlight (Hidden in Preview Mode) */}
+                        {/* Drop Zone Highlight */}
                         {!isPreviewMode && (
                           <div
                             style={{
@@ -2905,18 +2052,18 @@ export default function StudioPage() {
                               >
                                 {isDropOverForm
                                   ? 'Release to insert into Form container'
-                                  : 'Drop HeroUI Components Here'}
+                                  : 'Drop HeroUI v3 Components Here'}
                               </div>
                               <div
                                 style={{
                                   fontSize: '0.725rem',
                                   color: 'var(--portal-text-muted)',
-                                  maxWidth: '420px',
+                                  maxWidth: '460px',
                                 }}
                               >
-                                Drag any allowed component from the HeroUI drawer or click its '+'
-                                button to append. Reorder fields inside the form via drag-and-drop
-                                or arrow buttons.
+                                Supports all {totalCount} HeroUI components (Pickers, Inputs,
+                                Colors, Dialogs, Radios, Sliders, OTP). Drag to reorder or click
+                                arrow buttons.
                               </div>
                             </div>
                           </div>
@@ -2945,7 +2092,6 @@ export default function StudioPage() {
                         position: 'relative',
                       }}
                     >
-                      {/* Table Toolbar Badge */}
                       <div
                         style={{
                           padding: '0.5rem 1rem',
@@ -2990,7 +2136,6 @@ export default function StudioPage() {
                                 Bound: $.data
                               </span>
 
-                              {/* Section Reorder Buttons */}
                               <div
                                 style={{
                                   display: 'flex',
@@ -3076,7 +2221,6 @@ export default function StudioPage() {
                         </div>
                       </div>
 
-                      {/* Live Data-Bound Table Output */}
                       <table
                         style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.825rem' }}
                       >
@@ -3246,7 +2390,7 @@ export default function StudioPage() {
           </div>
         </main>
 
-        {/* Right Inspector Panel: Developer Data-Binding & Node Properties (Hidden in Preview Mode) */}
+        {/* Right Inspector Panel */}
         {!isPreviewMode && (
           <aside
             style={{
@@ -3258,7 +2402,6 @@ export default function StudioPage() {
               overflowY: 'auto',
             }}
           >
-            {/* Inspector Header */}
             <div
               style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--portal-border)' }}
             >
@@ -3507,36 +2650,6 @@ export default function StudioPage() {
                       </label>
                     </div>
                   )}
-
-                  {selectedNode?.props?.emptyText !== undefined && (
-                    <div>
-                      <label
-                        style={{
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: 'var(--portal-text-secondary)',
-                          display: 'block',
-                          marginBottom: '0.35rem',
-                        }}
-                      >
-                        Empty State Message
-                      </label>
-                      <input
-                        type="text"
-                        value={selectedNode.props.emptyText}
-                        onChange={(e) => updateNodeProperty('emptyText', e.target.value)}
-                        style={{
-                          width: '100%',
-                          background: 'var(--portal-surface-elevated)',
-                          border: '1px solid var(--portal-border)',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '6px 8px',
-                          color: 'var(--portal-text-primary)',
-                          fontSize: '0.8rem',
-                        }}
-                      />
-                    </div>
-                  )}
                 </>
               )}
 
@@ -3571,7 +2684,6 @@ export default function StudioPage() {
                     </div>
                   </div>
 
-                  {/* Column Span Slider */}
                   <div>
                     <div
                       style={{
@@ -3609,7 +2721,6 @@ export default function StudioPage() {
                     />
                   </div>
 
-                  {/* Quick Preset Buttons */}
                   <div>
                     <label
                       style={{
@@ -3688,7 +2799,6 @@ export default function StudioPage() {
                     </div>
                   </div>
 
-                  {/* Column Start Offset Stepper */}
                   <div>
                     <label
                       style={{
@@ -3765,7 +2875,7 @@ export default function StudioPage() {
                 </>
               )}
 
-              {/* TAB 3: DEVELOPER DATA BINDING (PHASE 5 ENGINE) */}
+              {/* TAB 3: DEVELOPER DATA BINDING */}
               {inspectorTab === 'binding' && (
                 <>
                   <div
@@ -3793,7 +2903,7 @@ export default function StudioPage() {
                       <span>Developer Tier: RFC 9535 Mapping</span>
                     </div>
                     <div style={{ fontSize: '0.725rem', color: 'var(--portal-text-secondary)' }}>
-                      Map this visual control to upstream backend mutations and query paths.
+                      Map this HeroUI component to upstream backend mutations and query paths.
                     </div>
                   </div>
 
@@ -4125,7 +3235,7 @@ export default function StudioPage() {
         </div>
       )}
 
-      {/* 3-Tier Administrator Component Governance Modal */}
+      {/* 3-Tier Administrator Component Governance Modal (All 72 Components) */}
       {showAdminGovernanceModal && (
         <div
           style={{
@@ -4143,7 +3253,7 @@ export default function StudioPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              width: '680px',
+              width: '780px',
               maxWidth: '95vw',
               maxHeight: '85vh',
               background: 'var(--portal-surface)',
@@ -4198,8 +3308,8 @@ export default function StudioPage() {
                       margin: '2px 0 0',
                     }}
                   >
-                    Tier 1 Governance: Configure which HeroUI components are allowed for builders in
-                    this project.
+                    Tier 1 Governance: Configure which of the {totalCount} HeroUI v3 components are
+                    permitted in this project.
                   </p>
                 </div>
               </div>
@@ -4234,7 +3344,7 @@ export default function StudioPage() {
                 <button
                   onClick={() => {
                     const allAllowed: Record<string, boolean> = {};
-                    HERO_UI_CATALOG.forEach((c) => (allAllowed[c.type] = true));
+                    COMPLETE_HERO_UI_CATALOG.forEach((c) => (allAllowed[c.type] = true));
                     setAdminAllowedComponents(allAllowed);
                   }}
                   style={{
@@ -4252,9 +3362,9 @@ export default function StudioPage() {
                 <button
                   onClick={() => {
                     const restrictedExperimental: Record<string, boolean> = {};
-                    HERO_UI_CATALOG.forEach((c) => {
+                    COMPLETE_HERO_UI_CATALOG.forEach((c) => {
                       restrictedExperimental[c.type] =
-                        c.badge !== 'New' && c.type !== 'Autocomplete';
+                        c.badge !== 'New' && c.type !== 'Autocomplete' && c.type !== 'InputOTP';
                     });
                     setAdminAllowedComponents(restrictedExperimental);
                   }}
@@ -4283,7 +3393,7 @@ export default function StudioPage() {
                 gap: '0.65rem',
               }}
             >
-              {HERO_UI_CATALOG.map((item) => {
+              {COMPLETE_HERO_UI_CATALOG.map((item) => {
                 const IconComp = item.icon;
                 const isAllowed = adminAllowedComponents[item.type] !== false;
 
@@ -4395,7 +3505,7 @@ export default function StudioPage() {
         </div>
       )}
 
-      {/* Footer Status Bar (Hidden in Preview Mode for clean view) */}
+      {/* Footer Status Bar */}
       {!isPreviewMode && (
         <footer
           style={{
@@ -4421,10 +3531,838 @@ export default function StudioPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span>Grid: 12 Col</span>
             <span>Dir: {direction.toUpperCase()}</span>
-            <span>Phase 3 Studio (Drag, Move & Preview)</span>
+            <span>All {totalCount} HeroUI Components Available</span>
           </div>
         </footer>
       )}
+    </div>
+  );
+}
+
+// Helper to Render Any of the 72 HeroUI Components Dynamically
+function renderHeroUIComponent(
+  field: any,
+  isPreviewMode: boolean,
+  liveFormValues: Record<string, any>,
+  setLiveFormValues: React.Dispatch<React.SetStateAction<Record<string, any>>>,
+) {
+  const currentValue = liveFormValues[field.id];
+
+  // 1. Text Inputs & Variants
+  if (field.type === 'Input' || field.type === 'TextField') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Input Field'}
+          {field.props.required && <span style={{ color: 'var(--portal-error)' }}> *</span>}
+        </label>
+        <input
+          type="text"
+          placeholder={field.props.placeholder}
+          value={currentValue !== undefined ? currentValue : field.props.placeholder || ''}
+          readOnly={!isPreviewMode}
+          onChange={(e) =>
+            setLiveFormValues((prev) => ({
+              ...prev,
+              [field.id]: e.target.value,
+            }))
+          }
+          style={{
+            width: '100%',
+            background: 'var(--portal-surface-elevated)',
+            border: '1px solid var(--portal-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 10px',
+            fontSize: '0.8rem',
+            color: 'var(--portal-text-primary)',
+            outline: isPreviewMode ? undefined : 'none',
+          }}
+        />
+        {field.props.description && (
+          <div style={{ fontSize: '0.65rem', color: 'var(--portal-text-muted)', marginTop: '2px' }}>
+            {field.props.description}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 2. TextArea
+  if (field.type === 'TextArea') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Text Area'}
+        </label>
+        <textarea
+          rows={field.props.rows || 3}
+          placeholder={field.props.placeholder}
+          value={currentValue !== undefined ? currentValue : ''}
+          readOnly={!isPreviewMode}
+          onChange={(e) =>
+            setLiveFormValues((prev) => ({
+              ...prev,
+              [field.id]: e.target.value,
+            }))
+          }
+          style={{
+            width: '100%',
+            background: 'var(--portal-surface-elevated)',
+            border: '1px solid var(--portal-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 10px',
+            fontSize: '0.8rem',
+            color: 'var(--portal-text-primary)',
+            outline: isPreviewMode ? undefined : 'none',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 3. NumberField
+  if (field.type === 'NumberField') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Number Field'}
+        </label>
+        <input
+          type="number"
+          min={field.props.min}
+          max={field.props.max}
+          value={currentValue !== undefined ? currentValue : field.props.value || 0}
+          readOnly={!isPreviewMode}
+          onChange={(e) =>
+            setLiveFormValues((prev) => ({
+              ...prev,
+              [field.id]: Number(e.target.value),
+            }))
+          }
+          style={{
+            width: '100%',
+            background: 'var(--portal-surface-elevated)',
+            border: '1px solid var(--portal-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 10px',
+            fontSize: '0.8rem',
+            color: 'var(--portal-text-primary)',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // 4. InputGroup
+  if (field.type === 'InputGroup') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Input Group'}
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {field.props.prefix && (
+            <span
+              style={{
+                background: 'var(--portal-surface)',
+                border: '1px solid var(--portal-border)',
+                borderInlineEnd: 'none',
+                padding: '6px 10px',
+                fontSize: '0.8rem',
+                color: 'var(--portal-text-muted)',
+                borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
+              }}
+            >
+              {field.props.prefix}
+            </span>
+          )}
+          <input
+            type="text"
+            placeholder={field.props.placeholder}
+            value={currentValue !== undefined ? currentValue : ''}
+            readOnly={!isPreviewMode}
+            onChange={(e) =>
+              setLiveFormValues((prev) => ({
+                ...prev,
+                [field.id]: e.target.value,
+              }))
+            }
+            style={{
+              flex: 1,
+              background: 'var(--portal-surface-elevated)',
+              border: '1px solid var(--portal-border)',
+              padding: '6px 10px',
+              fontSize: '0.8rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          />
+          {field.props.suffix && (
+            <span
+              style={{
+                background: 'var(--portal-surface)',
+                border: '1px solid var(--portal-border)',
+                borderInlineStart: 'none',
+                padding: '6px 10px',
+                fontSize: '0.75rem',
+                color: 'var(--portal-text-muted)',
+                borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+              }}
+            >
+              {field.props.suffix}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 5. InputOTP
+  if (field.type === 'InputOTP') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '4px',
+          }}
+        >
+          {field.props.label || 'One-Time Passcode'}
+        </label>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {Array.from({ length: field.props.length || 6 }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: '36px',
+                height: '42px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--portal-border)',
+                background: 'var(--portal-surface-elevated)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1rem',
+                fontWeight: 700,
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--portal-accent)',
+              }}
+            >
+              {i < 3 ? '•' : ''}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 6. SearchField
+  if (field.type === 'SearchField' || field.type === 'Autocomplete' || field.type === 'ComboBox') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || field.type}
+        </label>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--portal-surface-elevated)',
+            border: '1px solid var(--portal-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 10px',
+            fontSize: '0.8rem',
+            color: 'var(--portal-text-muted)',
+            gap: '6px',
+          }}
+        >
+          <Search size={13} />
+          <input
+            type="text"
+            placeholder={field.props.placeholder || 'Type to search...'}
+            value={currentValue !== undefined ? currentValue : ''}
+            readOnly={!isPreviewMode}
+            onChange={(e) =>
+              setLiveFormValues((prev) => ({
+                ...prev,
+                [field.id]: e.target.value,
+              }))
+            }
+            style={{
+              border: 'none',
+              background: 'transparent',
+              outline: 'none',
+              width: '100%',
+              fontSize: '0.8rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 7. Select Dropdown
+  if (field.type === 'Select') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Select Dropdown'}
+        </label>
+        {isPreviewMode ? (
+          <select
+            value={currentValue || field.props.options?.[0] || ''}
+            onChange={(e) =>
+              setLiveFormValues((prev) => ({
+                ...prev,
+                [field.id]: e.target.value,
+              }))
+            }
+            style={{
+              width: '100%',
+              background: 'var(--portal-surface-elevated)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              fontSize: '0.8rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          >
+            {(field.props.options || []).map((opt: string) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'var(--portal-surface-elevated)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              fontSize: '0.8rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          >
+            <span>{field.props.options?.[0] || 'Choose an option...'}</span>
+            <ChevronDown size={14} style={{ color: 'var(--portal-text-muted)' }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 8. Date & Calendar Pickers
+  if (
+    field.type === 'Calendar' ||
+    field.type === 'DatePicker' ||
+    field.type === 'DateRangePicker' ||
+    field.type === 'DateField' ||
+    field.type === 'RangeCalendar'
+  ) {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Date Selection'}
+        </label>
+        {isPreviewMode ? (
+          <input
+            type="date"
+            value={currentValue || '2026-11-01'}
+            onChange={(e) =>
+              setLiveFormValues((prev) => ({
+                ...prev,
+                [field.id]: e.target.value,
+              }))
+            }
+            style={{
+              width: '100%',
+              background: 'var(--portal-surface-elevated)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              fontSize: '0.8rem',
+              color: 'var(--portal-text-primary)',
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'var(--portal-surface-elevated)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 10px',
+              fontSize: '0.8rem',
+              color: 'var(--portal-text-secondary)',
+            }}
+          >
+            <span>2026-11-01</span>
+            <CalendarIcon size={14} style={{ color: 'var(--portal-accent)' }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 9. TimeField
+  if (field.type === 'TimeField') {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Time Field'}
+        </label>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'var(--portal-surface-elevated)',
+            border: '1px solid var(--portal-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '6px 10px',
+            fontSize: '0.8rem',
+            color: 'var(--portal-text-secondary)',
+          }}
+        >
+          <span>{field.props.value || '09:00 AM'}</span>
+          <Clock size={14} style={{ color: 'var(--portal-accent)' }} />
+        </div>
+      </div>
+    );
+  }
+
+  // 10. Checkbox & Switch
+  if (field.type === 'Checkbox' || field.type === 'Switch') {
+    const isChecked = currentValue ?? field.props.checked ?? false;
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '4px 0',
+          cursor: isPreviewMode ? 'pointer' : 'default',
+        }}
+        onClick={() => {
+          if (isPreviewMode) {
+            setLiveFormValues((prev) => ({
+              ...prev,
+              [field.id]: !isChecked,
+            }));
+          }
+        }}
+      >
+        {field.type === 'Switch' ? (
+          <div
+            style={{
+              width: '34px',
+              height: '18px',
+              borderRadius: '9999px',
+              background: isChecked ? 'var(--portal-accent)' : 'var(--portal-border)',
+              position: 'relative',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div
+              style={{
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                background: '#fff',
+                position: 'absolute',
+                top: '2px',
+                left: isChecked ? '18px' : '2px',
+                transition: 'all 0.15s ease',
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            style={{
+              width: '16px',
+              height: '16px',
+              borderRadius: '4px',
+              background: isChecked ? 'var(--portal-accent)' : 'transparent',
+              border: `1px solid ${isChecked ? 'var(--portal-accent)' : 'var(--portal-border)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+            }}
+          >
+            {isChecked && <Check size={11} />}
+          </div>
+        )}
+        <span style={{ fontSize: '0.775rem', color: 'var(--portal-text-primary)' }}>
+          {field.props.label || 'Toggle Option'}
+        </span>
+      </div>
+    );
+  }
+
+  // 11. CheckboxGroup & SwitchGroup & RadioGroup
+  if (
+    field.type === 'CheckboxGroup' ||
+    field.type === 'SwitchGroup' ||
+    field.type === 'RadioGroup'
+  ) {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '4px',
+          }}
+        >
+          {field.props.label || field.type}
+        </label>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {(field.props.options || ['Option A', 'Option B']).map((opt: string) => (
+            <div key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div
+                style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: field.type === 'RadioGroup' ? '50%' : '3px',
+                  border: '1px solid var(--portal-accent)',
+                  background: 'rgba(59, 130, 246, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--portal-accent)',
+                }}
+              >
+                <Check size={9} />
+              </div>
+              <span style={{ fontSize: '0.725rem', color: 'var(--portal-text-secondary)' }}>
+                {opt}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 12. Slider
+  if (field.type === 'Slider') {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+          <label
+            style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--portal-text-primary)' }}
+          >
+            {field.props.label || 'Range Slider'}
+          </label>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--portal-accent)',
+            }}
+          >
+            {currentValue ?? field.props.value ?? 50}%
+          </span>
+        </div>
+        <input
+          type="range"
+          min={field.props.min || 0}
+          max={field.props.max || 100}
+          value={currentValue ?? field.props.value ?? 50}
+          disabled={!isPreviewMode}
+          onChange={(e) =>
+            setLiveFormValues((prev) => ({
+              ...prev,
+              [field.id]: Number(e.target.value),
+            }))
+          }
+          style={{ width: '100%' }}
+        />
+      </div>
+    );
+  }
+
+  // 13. Color Picker & Swatches
+  if (
+    field.type === 'ColorPicker' ||
+    field.type === 'ColorField' ||
+    field.type === 'ColorSwatchPicker'
+  ) {
+    return (
+      <div>
+        <label
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            color: 'var(--portal-text-primary)',
+            display: 'block',
+            marginBottom: '3px',
+          }}
+        >
+          {field.props.label || 'Color Selection'}
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '4px',
+              background: field.props.value || '#3b82f6',
+              border: '1px solid var(--portal-border)',
+            }}
+          />
+          <span
+            style={{
+              fontSize: '0.75rem',
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--portal-text-secondary)',
+            }}
+          >
+            {field.props.value || '#3b82f6'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 14. Button & ButtonGroup
+  if (field.type === 'Button' || field.type === 'CloseButton' || field.type === 'ToggleButton') {
+    return (
+      <button
+        type={isPreviewMode && field.props.isSubmit ? 'submit' : 'button'}
+        style={{
+          background: 'var(--portal-accent)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 'var(--radius-sm)',
+          padding: '8px 16px',
+          fontSize: '0.8rem',
+          fontWeight: 600,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+        }}
+      >
+        <MousePointer size={14} /> {field.props.label || 'Submit Action'}
+      </button>
+    );
+  }
+
+  // 15. Alert & AlertDialog & Toast
+  if (field.type === 'Alert' || field.type === 'AlertDialog' || field.type === 'Toast') {
+    return (
+      <div
+        style={{
+          background: 'rgba(245, 158, 11, 0.12)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '8px 10px',
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'flex-start',
+        }}
+      >
+        <AlertCircle size={15} style={{ color: 'var(--portal-warning)', flexShrink: 0 }} />
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--portal-warning)' }}>
+            {field.props.title || field.type}
+          </div>
+          <div style={{ fontSize: '0.7rem', color: 'var(--portal-text-secondary)' }}>
+            {field.props.message}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 16. Avatar & AvatarGroup
+  if (field.type === 'Avatar' || field.type === 'AvatarGroup') {
+    return (
+      <div>
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: '4px' }}>
+          {field.props.label || 'Reviewers / Profile'}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {(field.props.names || ['Sarah Jenkins', 'Ahmed K.']).map(
+            (name: string, avIdx: number) => (
+              <div
+                key={name}
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: `hsl(${avIdx * 70 + 200}, 70%, 50%)`,
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  border: '2px solid var(--portal-surface)',
+                  marginInlineStart: avIdx > 0 ? '-8px' : 0,
+                }}
+              >
+                {name.slice(0, 1)}
+              </div>
+            ),
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 17. Chips, Badges, Tags, Kbd
+  if (
+    field.type === 'Badge' ||
+    field.type === 'Chip' ||
+    field.type === 'TagGroup' ||
+    field.type === 'Kbd'
+  ) {
+    return (
+      <div>
+        <span
+          style={{
+            fontSize: '0.725rem',
+            background: 'rgba(16, 185, 129, 0.15)',
+            color: 'var(--portal-success)',
+            padding: '3px 8px',
+            borderRadius: 'var(--radius-sm)',
+            fontWeight: 600,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          <Sparkles size={11} /> {field.props.label || field.props.text || 'Badge Tag'}
+        </span>
+      </div>
+    );
+  }
+
+  // 18. Progress, Meter, Spinner, Skeleton
+  if (field.type === 'ProgressBar' || field.type === 'Meter') {
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+            {field.props.label || 'Progress'}
+          </span>
+          <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
+            {field.props.value || 75}%
+          </span>
+        </div>
+        <div
+          style={{
+            height: '8px',
+            borderRadius: '9999px',
+            background: 'var(--portal-border)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              width: `${field.props.value || 75}%`,
+              height: '100%',
+              background: 'var(--portal-accent)',
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for all other container or disclosure components
+  return (
+    <div
+      style={{
+        background: 'var(--portal-surface-elevated)',
+        border: '1px solid var(--portal-border)',
+        borderRadius: 'var(--radius-sm)',
+        padding: '8px 10px',
+      }}
+    >
+      <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>{field.props.title || field.type}</div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--portal-text-muted)', marginTop: '2px' }}>
+        {field.props.content || field.props.description || 'HeroUI Component Node'}
+      </div>
     </div>
   );
 }

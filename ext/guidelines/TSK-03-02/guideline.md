@@ -25,6 +25,22 @@
    - Dropped controls inherit grid column spans (defaulting to 6 columns for inputs/selects/dates, 12 columns for buttons/checkbox groups) and receive unique, monotonic node identifiers.
    - The form container provides an active visual drop target with dashed boundary highlighting and state transition on drag-over.
 
-4. **Zero Hardcoded Colors & WCAG 2.2 AA Contrast:**
+4. **Complete 72 HeroUI v3 Component Library Coverage:**
+   - Full representation across 7 standard categories:
+     - Form & Inputs (18): `Input`, `TextArea`, `TextField`, `NumberField`, `InputGroup`, `InputOTP`, `SearchField`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `Switch`, `SwitchGroup`, `Slider`, `ToggleButton`, `ToggleButtonGroup`, `Label`, `Description`, `FieldError`
+     - Pickers & Selectors (12): `Select`, `ComboBox`, `Autocomplete`, `DateField`, `TimeField`, `DatePicker`, `DateRangePicker`, `Calendar`, `RangeCalendar`, `ColorPicker`, `ColorField`, `ColorSwatchPicker`
+     - Layout & Structure (12): `Form`, `Fieldset`, `Card`, `Surface`, `Separator`, `Accordion`, `Disclosure`, `DisclosureGroup`, `Drawer`, `Modal`, `Popover`, `Toolbar`
+     - Interactive (4): `Button`, `ButtonGroup`, `CloseButton`, `Link`
+     - Data Display (13): `Table`, `ListBox`, `Menu`, `Dropdown`, `Avatar`, `AvatarGroup`, `Badge`, `Chip`, `TagGroup`, `Kbd`, `Typography`, `Header`, `EmptyState`
+     - Feedback & Indicators (8): `Alert`, `AlertDialog`, `Toast`, `ProgressBar`, `ProgressCircle`, `Spinner`, `Skeleton`, `Meter`
+     - Navigation & Scrolling (5): `Breadcrumbs`, `Tabs`, `Pagination`, `ScrollShadow`, `Tooltip`
+   - Complete skills mirroring in `.agents/skills/` and `.claude/skills/`:
+     - `heroui-react`: Component catalog discovery, documentation retrieval, code example inspection
+     - `heroui-migration`: Upgrade codemods, syntax migration, breaking change detection
+     - `heroui-native`: React Native & universal cross-platform patterns
+   - Mirrored prompts in `ext/heroui/prompts/`: `heroui-system-prompt.md`, `bolt-heroui.md`, `v0-heroui.md`
+
+5. **Zero Hardcoded Colors & WCAG 2.2 AA Contrast:**
    - All borders, backgrounds, text values, and focus rings must bind directly to CSS variables (`--portal-bg`, `--portal-surface`, `--portal-border-active`, `--portal-text-primary`, `--portal-accent`, etc.).
    - Support seamless transitions between Light and Dark themes, as well as full Arabic RTL mirroring (`IBM Plex Sans Arabic`, `dir="rtl"`).
+
