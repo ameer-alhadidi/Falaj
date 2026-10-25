@@ -29,6 +29,7 @@ import {
   Trash2,
   Copy,
   ChevronRight,
+  ChevronLeft,
   ChevronDown,
   ChevronUp,
   Database,
@@ -115,18 +116,18 @@ const INITIAL_FORM_FIELDS = [
   },
   {
     id: 'node-field-hiredate',
-    type: 'Calendar',
+    type: 'DateRangePicker',
     schemaVersion: 1,
     layout: { colStart: 1, colSpan: 6 },
     props: {
-      label: 'Employment Start Date',
-      placeholder: 'Select effective date...',
+      label: 'Employment Contract Period',
+      placeholder: 'dd / mm / yyyy – dd / mm / yyyy',
     },
     binding: {
-      field: 'startDate',
-      path: '$.data.employee.startDate',
+      field: 'contractPeriod',
+      path: '$.data.employee.contractPeriod',
       operation: 'POST /api/employees',
-      validation: 'iso8601-date',
+      validation: 'iso8601-range',
     },
   },
   {
@@ -4175,7 +4176,7 @@ function renderHeroUIComponent(
     );
   }
 
-  // 8. Date & Calendar Pickers
+  // 8. Date & Calendar Pickers (HeroUI v3 High-Fidelity DatePicker & DateRangePicker)
   if (
     field.type === 'Calendar' ||
     field.type === 'DatePicker' ||
@@ -4183,55 +4184,390 @@ function renderHeroUIComponent(
     field.type === 'DateField' ||
     field.type === 'RangeCalendar'
   ) {
+    const isRange = field.type === 'DateRangePicker' || field.type === 'RangeCalendar';
+    const isInlineCalendar = field.type === 'Calendar' || field.type === 'RangeCalendar';
+    const isFlyoutOpen = isInlineCalendar || !!liveFormValues[field.id + '_flyout'];
+
+    // Current range / single date selection
+    const rangeStart = liveFormValues[field.id + '_start'] || 19;
+    const rangeEnd = liveFormValues[field.id + '_end'] || 25;
+    const singleDate = liveFormValues[field.id] || 25;
+
+    const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    // 35 days grid matching October 2026 exactly as shown in HeroUI documentation
+    const calendarDays = [
+      { day: 28, isPrevMonth: true },
+      { day: 29, isPrevMonth: true },
+      { day: 30, isPrevMonth: true },
+      { day: 1 },
+      { day: 2 },
+      { day: 3 },
+      { day: 4 },
+      { day: 5 },
+      { day: 6 },
+      { day: 7 },
+      { day: 8 },
+      { day: 9 },
+      { day: 10 },
+      { day: 11 },
+      { day: 12 },
+      { day: 13 },
+      { day: 14 },
+      { day: 15 },
+      { day: 16 },
+      { day: 17 },
+      { day: 18 },
+      { day: 19 },
+      { day: 20 },
+      { day: 21 },
+      { day: 22 },
+      { day: 23 },
+      { day: 24 },
+      { day: 25 },
+      { day: 26 },
+      { day: 27 },
+      { day: 28 },
+      { day: 29 },
+      { day: 30 },
+      { day: 31 },
+      { day: 1, isNextMonth: true },
+    ];
+
+    const toggleFlyout = (e?: React.MouseEvent) => {
+      if (e) e.stopPropagation();
+      setLiveFormValues((prev) => ({
+        ...prev,
+        [field.id + '_flyout']: !prev[field.id + '_flyout'],
+      }));
+    };
+
+    const handleSelectDay = (
+      dayObj: { day: number; isPrevMonth?: boolean; isNextMonth?: boolean },
+      e: React.MouseEvent,
+    ) => {
+      e.stopPropagation();
+      if (dayObj.isPrevMonth || dayObj.isNextMonth) return;
+      if (isRange) {
+        if (dayObj.day < rangeStart || rangeStart !== rangeEnd) {
+          setLiveFormValues((prev) => ({
+            ...prev,
+            [field.id + '_start']: dayObj.day,
+            [field.id + '_end']: dayObj.day,
+          }));
+        } else {
+          setLiveFormValues((prev) => ({
+            ...prev,
+            [field.id + '_start']: Math.min(rangeStart, dayObj.day),
+            [field.id + '_end']: Math.max(rangeStart, dayObj.day),
+          }));
+        }
+      } else {
+        setLiveFormValues((prev) => ({
+          ...prev,
+          [field.id]: dayObj.day,
+        }));
+      }
+    };
+
     return (
-      <div>
-        <label
+      <div style={{ position: 'relative' }}>
+        {/* Label and Flyout Preview Indicator */}
+        <div
           style={{
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            color: 'var(--portal-text-primary)',
-            display: 'block',
-            marginBottom: '3px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '4px',
           }}
         >
-          {field.props.label || 'Date Selection'}
-        </label>
-        {isPreviewMode ? (
-          <input
-            type="date"
-            value={currentValue || '2026-11-01'}
-            onChange={(e) =>
-              setLiveFormValues((prev) => ({
-                ...prev,
-                [field.id]: e.target.value,
-              }))
-            }
+          <label
             style={{
-              width: '100%',
-              background: 'var(--portal-surface-elevated)',
-              border: '1px solid var(--portal-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '6px 10px',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
+              fontWeight: 600,
               color: 'var(--portal-text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
             }}
-          />
-        ) : (
+          >
+            <span>{field.props.label || (isRange ? 'Date Range' : 'Date Selection')}</span>
+            {field.props.required && <span style={{ color: 'var(--portal-error)' }}>*</span>}
+          </label>
+          {!isInlineCalendar && !isPreviewMode && (
+            <button
+              type="button"
+              onClick={toggleFlyout}
+              title="Toggle HeroUI Calendar Popover Flyout"
+              style={{
+                background: isFlyoutOpen ? 'rgba(59, 130, 246, 0.15)' : 'var(--portal-surface)',
+                border:
+                  '1px solid ' + (isFlyoutOpen ? 'var(--portal-accent)' : 'var(--portal-border)'),
+                color: isFlyoutOpen ? 'var(--portal-accent)' : 'var(--portal-text-muted)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '1px 6px',
+                fontSize: '0.625rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+              }}
+            >
+              <CalendarIcon size={10} />
+              <span>{isFlyoutOpen ? 'Close Popover' : 'Preview Popover'}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Input Trigger (for DatePicker, DateRangePicker, DateField) */}
+        {!isInlineCalendar && (
           <div
+            onClick={toggleFlyout}
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               background: 'var(--portal-surface-elevated)',
-              border: '1px solid var(--portal-border)',
+              border: isFlyoutOpen
+                ? '1px solid var(--portal-accent)'
+                : '1px solid var(--portal-border)',
               borderRadius: 'var(--radius-sm)',
               padding: '6px 10px',
               fontSize: '0.8rem',
-              color: 'var(--portal-text-secondary)',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s ease',
+              boxShadow: isFlyoutOpen ? '0 0 0 2px rgba(59, 130, 246, 0.2)' : 'none',
             }}
           >
-            <span>2026-11-01</span>
-            <CalendarIcon size={14} style={{ color: 'var(--portal-accent)' }} />
+            {isRange ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.775rem',
+                  color: 'var(--portal-text-secondary)',
+                }}
+              >
+                <span>{`${String(rangeStart).padStart(2, '0')} / 10 / 2026`}</span>
+                <span style={{ color: 'var(--portal-text-muted)' }}>–</span>
+                <span>{`${String(rangeEnd).padStart(2, '0')} / 10 / 2026`}</span>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.775rem',
+                  color: 'var(--portal-text-secondary)',
+                }}
+              >
+                <span>
+                  {singleDate
+                    ? `${String(singleDate).padStart(2, '0')} / 10 / 2026`
+                    : 'dd / mm / yyyy'}
+                </span>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={toggleFlyout}
+              title="Open Calendar Popover"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: isFlyoutOpen ? 'var(--portal-accent)' : 'var(--portal-text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '2px',
+              }}
+            >
+              <CalendarIcon size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* HeroUI v3 Calendar Card / Popover Flyout */}
+        {(isInlineCalendar || isFlyoutOpen) && (
+          <div
+            style={{
+              position: isInlineCalendar ? 'relative' : 'absolute',
+              top: isInlineCalendar ? 'auto' : 'calc(100% + 6px)',
+              left: isInlineCalendar ? 'auto' : 0,
+              zIndex: 40,
+              width: '100%',
+              maxWidth: '310px',
+              background: 'var(--portal-surface-elevated)',
+              border: '1px solid var(--portal-border)',
+              borderRadius: '16px',
+              padding: '14px 16px',
+              boxShadow: isInlineCalendar
+                ? '0 2px 8px rgba(0, 0, 0, 0.15)'
+                : '0 20px 48px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header: Month/Year and Chevrons */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: 'var(--portal-text-primary)',
+                  cursor: 'pointer',
+                }}
+              >
+                <span>October 2026</span>
+                <ChevronRight size={13} style={{ color: 'var(--portal-text-muted)' }} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                  type="button"
+                  title="Previous Month"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--portal-text-secondary)',
+                    padding: '3px',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                  }}
+                >
+                  <ChevronLeft size={13} />
+                </button>
+                <button
+                  type="button"
+                  title="Next Month"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--portal-text-secondary)',
+                    padding: '3px',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                  }}
+                >
+                  <ChevronRight size={13} />
+                </button>
+              </div>
+            </div>
+
+            {/* Weekday Names */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                textAlign: 'center',
+                fontSize: '0.7rem',
+                fontWeight: 500,
+                color: 'var(--portal-text-muted)',
+                marginBottom: '6px',
+              }}
+            >
+              {daysOfWeek.map((d) => (
+                <div key={d}>{d}</div>
+              ))}
+            </div>
+
+            {/* 35 Days Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                rowGap: '3px',
+              }}
+            >
+              {calendarDays.map((dObj, idx) => {
+                const isOverflow = dObj.isPrevMonth || dObj.isNextMonth;
+                const d = dObj.day;
+
+                // Range calculations for DateRangePicker / RangeCalendar
+                const isInRange = isRange && !isOverflow && d >= rangeStart && d <= rangeEnd;
+                const isStart = isRange && !isOverflow && d === rangeStart;
+                const isEnd = isRange && !isOverflow && d === rangeEnd;
+                const isSingleSelected = !isRange && !isOverflow && d === singleDate;
+
+                // Day container background for continuous range band
+                let containerBg = 'transparent';
+                let containerRadius = '0';
+
+                if (isRange && isInRange) {
+                  containerBg = 'rgba(59, 130, 246, 0.15)';
+                  if (isStart && isEnd) {
+                    containerRadius = '50%';
+                  } else if (isStart) {
+                    containerRadius = '50% 0 0 50%';
+                  } else if (isEnd) {
+                    containerRadius = '0 50% 50% 0';
+                  }
+                }
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={(e) => handleSelectDay(dObj, e)}
+                    style={{
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: containerBg,
+                      borderRadius: containerRadius,
+                      cursor: isOverflow ? 'default' : 'pointer',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.775rem',
+                        fontWeight:
+                          isStart || isEnd || isSingleSelected ? 700 : isInRange ? 600 : 400,
+                        background:
+                          isStart || isEnd || isSingleSelected
+                            ? 'var(--portal-accent)'
+                            : 'transparent',
+                        color:
+                          isStart || isEnd || isSingleSelected
+                            ? '#fff'
+                            : isOverflow
+                              ? 'var(--portal-text-muted)'
+                              : isInRange
+                                ? 'var(--portal-accent)'
+                                : 'var(--portal-text-primary)',
+                        opacity: isOverflow ? 0.35 : 1,
+                        boxShadow:
+                          isStart || isEnd || isSingleSelected
+                            ? '0 2px 6px rgba(59, 130, 246, 0.4)'
+                            : 'none',
+                        transition: 'all 0.1s ease',
+                      }}
+                    >
+                      {d}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
