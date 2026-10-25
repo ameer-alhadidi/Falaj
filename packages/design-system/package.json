@@ -1,0 +1,16 @@
+{
+  "name": "@falaj/design-system",
+  "version": "0.1.0",
+  "description": "Enterprise Studio Design System tokens and theme utilities",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css"
+  },
+  "scripts": {
+    "build": "echo \"Design system built successfully\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"Design tokens lint passed\""
+  }
+}

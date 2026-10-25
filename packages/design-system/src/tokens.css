@@ -1,0 +1,92 @@
+/* Enterprise Studio Design System (theme ID: enterprise-studio) */
+/* Single Source of Truth for Portal & Studio Surfaces */
+
+:root {
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Typography Scales */
+  --font-family-latin: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-arabic: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI Arabic', sans-serif;
+
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+
+  /* Spacing Scale (Logical) */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-6: 1.5rem; /* 24px */
+  --space-8: 2rem; /* 32px */
+
+  /* Z-Index Hierarchy */
+  --z-canvas-grid: 10;
+  --z-canvas-node: 20;
+  --z-canvas-overlay: 30;
+  --z-panel: 40;
+  --z-dropdown: 50;
+  --z-modal: 100;
+  --z-toast: 150;
+}
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --portal-bg: #f8fafc;
+  --portal-surface: #ffffff;
+  --portal-surface-elevated: #ffffff;
+  --portal-surface-hover: #f1f5f9;
+  --portal-border: #e2e8f0;
+  --portal-border-active: #2563eb;
+  --portal-text-primary: #0f172a;
+  --portal-text-secondary: #475569;
+  --portal-text-muted: #64748b;
+  --portal-accent: #2563eb;
+  --portal-accent-hover: #1d4ed8;
+  --portal-accent-foreground: #ffffff;
+  --portal-success: #059669;
+  --portal-warning: #b45309;
+  --portal-error: #dc2626;
+  --canvas-grid-line: rgba(37, 99, 235, 0.1);
+  --canvas-grid-active: rgba(37, 99, 235, 0.28);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --portal-bg: #090a0f;
+  --portal-surface: #11131b;
+  --portal-surface-elevated: #171b26;
+  --portal-surface-hover: #1f2433;
+  --portal-border: #232938;
+  --portal-border-active: #3b82f6;
+  --portal-text-primary: #f8fafc;
+  --portal-text-secondary: #94a3b8;
+  /* WCAG 2.2 AA Audited: Boosted from #64748b to #94a3b8 for 4.5:1 ratio */
+  --portal-text-muted: #94a3b8;
+  --portal-accent: #3b82f6;
+  --portal-accent-hover: #2563eb;
+  /* WCAG 2.2 AA Audited: Dark foreground for #3b82f6 button contrast */
+  --portal-accent-foreground: #090a0f;
+  --portal-success: #10b981;
+  --portal-warning: #f59e0b;
+  --portal-error: #ef4444;
+  --canvas-grid-line: rgba(59, 130, 246, 0.12);
+  --canvas-grid-active: rgba(59, 130, 246, 0.35);
+}
+
+/* Directional Typography & Layout */
+[dir='rtl'] {
+  font-family: var(--font-family-arabic);
+}
+
+[dir='ltr'] {
+  font-family: var(--font-family-latin);
+}
