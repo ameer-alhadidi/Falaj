@@ -25,6 +25,8 @@ import {
   Eye,
   EyeOff,
   Send,
+  Save,
+  Download,
   Moon,
   Sun,
   Laptop,
@@ -565,6 +567,77 @@ export default function StudioPage() {
     } else {
       setSitemapTree((prev) => [...prev, newSitemapNode]);
     }
+    setSaveStatus('Unsaved changes');
+  };
+
+  // Hydrate sitemap and pages from localStorage on initial load
+  useEffect(() => {
+    try {
+      const savedSitemap = localStorage.getItem('falaj_sitemap_tree');
+      const savedRegistry = localStorage.getItem('falaj_pages_registry');
+      if (savedSitemap) {
+        const parsedTree = JSON.parse(savedSitemap);
+        if (Array.isArray(parsedTree) && parsedTree.length > 0) {
+          setSitemapTree(parsedTree);
+        }
+      }
+      if (savedRegistry) {
+        const parsedReg = JSON.parse(savedRegistry);
+        if (parsedReg && typeof parsedReg === 'object') {
+          setPagesRegistry(parsedReg);
+          if (parsedReg[activePageId]) {
+            setPageNodes(parsedReg[activePageId].pageNodes || []);
+            setFormFields(parsedReg[activePageId].formFields || []);
+            setSectionOrder(parsedReg[activePageId].sectionOrder || ['header', 'form', 'table']);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load sitemap from localStorage', e);
+    }
+  }, []);
+
+  // Save Project Changes to Local Storage and Snapshot Active Page
+  const handleSaveProject = () => {
+    const updatedRegistry = {
+      ...pagesRegistry,
+      [activePageId]: {
+        ...pagesRegistry[activePageId],
+        pageNodes: JSON.parse(JSON.stringify(pageNodes)),
+        formFields: JSON.parse(JSON.stringify(formFields)),
+        sectionOrder: [...sectionOrder],
+      },
+    };
+    setPagesRegistry(updatedRegistry);
+
+    try {
+      localStorage.setItem('falaj_sitemap_tree', JSON.stringify(sitemapTree));
+      localStorage.setItem('falaj_pages_registry', JSON.stringify(updatedRegistry));
+    } catch (e) {
+      console.warn('Could not persist to localStorage', e);
+    }
+
+    setSaveStatus('Saved');
+    alert(`[Project Saved]: Successfully saved sitemap tree (${sitemapTree.length} root items) and page registry to browser storage!`);
+  };
+
+  // Export Sitemap & Page Definitions as JSON Manifest
+  const handleExportManifest = () => {
+    const manifest = {
+      manifestVersion: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      platform: 'Enterprise Visual Platform',
+      activePageId,
+      sitemapTree,
+      pagesRegistry,
+    };
+    const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `falaj-sitemap-manifest-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   // Undo/Redo Stacks
@@ -581,9 +654,14 @@ export default function StudioPage() {
     document.documentElement.setAttribute('dir', direction);
   }, [direction]);
 
-  // Global Keyboard Shortcuts (Esc to exit preview or close modal, P to toggle preview)
+  // Global Keyboard Shortcuts (Ctrl+S to save, Esc to exit preview/modal, P to toggle preview)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveProject();
+        return;
+      }
       if (e.key === 'Escape') {
         if (showAdminGovernanceModal) {
           setShowAdminGovernanceModal(false);
@@ -599,7 +677,7 @@ export default function StudioPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPreviewMode, showAdminGovernanceModal]);
+  }, [sitemapTree, pagesRegistry, activePageId, pageNodes, formFields, sectionOrder, isPreviewMode, showAdminGovernanceModal]);
 
   // Helper to find selected node
   const findNode = (nodes: any[], id: string): any => {
@@ -1209,6 +1287,55 @@ export default function StudioPage() {
               >
                 {saveStatus}
               </span>
+
+              <button
+                id="btn-save-project-topbar"
+                onClick={handleSaveProject}
+                title="Save Project Changes (Ctrl+S / Cmd+S)"
+                style={{
+                  background:
+                    saveStatus === 'Saved'
+                      ? 'var(--portal-surface-elevated)'
+                      : 'rgba(16, 185, 129, 0.15)',
+                  border: `1px solid ${saveStatus === 'Saved' ? 'var(--portal-border)' : 'var(--portal-success)'}`,
+                  color: saveStatus === 'Saved' ? 'var(--portal-text-primary)' : 'var(--portal-success)',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.675rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Save size={12} />
+                <span>Save</span>
+              </button>
+
+              <button
+                id="btn-export-manifest-topbar"
+                onClick={handleExportManifest}
+                title="Export Sitemap & Page Manifest (.json)"
+                style={{
+                  background: 'var(--portal-surface-elevated)',
+                  border: '1px solid var(--portal-border)',
+                  color: 'var(--portal-text-secondary)',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.675rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <Download size={12} />
+                <span>Export JSON</span>
+              </button>
+
               <span>•</span>
               <span
                 style={{
@@ -2269,6 +2396,9 @@ export default function StudioPage() {
               onOpenPageDesigner={handleOpenPageDesigner}
               onAddPage={handleAddPageFromFlow}
               onDeletePage={handleDeletePage}
+              onSave={handleSaveProject}
+              onExportManifest={handleExportManifest}
+              saveStatus={saveStatus}
               themeMode={themeMode}
             />
           </main>

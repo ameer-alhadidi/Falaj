@@ -37,6 +37,8 @@ import {
   Info,
   CheckCircle2,
   X,
+  Save,
+  Download,
 } from 'lucide-react';
 import { SitemapNode, StudioPageDefinition } from '../../fixtures/sitemap';
 
@@ -324,6 +326,9 @@ export interface SitemapFlowCanvasProps {
   onOpenPageDesigner: (pageId: string) => void;
   onAddPage: (page: { title: string; route: string; parentId?: string }) => void;
   onDeletePage: (pageId: string) => void;
+  onSave?: () => void;
+  onExportManifest?: () => void;
+  saveStatus?: 'Saved' | 'Unsaved changes';
   themeMode?: 'dark' | 'light';
 }
 
@@ -335,6 +340,9 @@ export function SitemapFlowCanvas({
   onOpenPageDesigner,
   onAddPage,
   onDeletePage,
+  onSave,
+  onExportManifest,
+  saveStatus = 'Saved',
   themeMode = 'dark',
 }: SitemapFlowCanvasProps) {
   // Modal State for Adding Page Node
@@ -625,6 +633,58 @@ export function SitemapFlowCanvas({
             >
               <Trash2 size={13} />
               <span>Delete Node</span>
+            </button>
+          )}
+
+          {onSave && (
+            <button
+              id="btn-flow-save-sitemap"
+              onClick={onSave}
+              title="Save Project & Sitemap Changes (Ctrl+S / Cmd+S)"
+              style={{
+                background:
+                  saveStatus === 'Saved'
+                    ? 'rgba(16, 185, 129, 0.15)'
+                    : 'var(--portal-accent, #3b82f6)',
+                color: saveStatus === 'Saved' ? 'var(--portal-success, #10b981)' : '#fff',
+                border: `1px solid ${saveStatus === 'Saved' ? 'var(--portal-success, #10b981)' : 'transparent'}`,
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {saveStatus === 'Saved' ? <CheckCircle2 size={13} /> : <Save size={13} />}
+              <span>{saveStatus === 'Saved' ? 'Saved' : 'Save Changes'}</span>
+            </button>
+          )}
+
+          {onExportManifest && (
+            <button
+              id="btn-flow-export-manifest"
+              onClick={onExportManifest}
+              title="Export Sitemap & Page Manifest (.json)"
+              style={{
+                background: 'var(--portal-surface-elevated, #0f172a)',
+                border: '1px solid var(--portal-border, rgba(255, 255, 255, 0.15))',
+                color: 'var(--portal-text-secondary, #cbd5e1)',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+              }}
+            >
+              <Download size={13} />
+              <span>Export JSON</span>
             </button>
           )}
         </div>
