@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import initialEmployees from '../fixtures/employees.json';
 import initialPageData from '../fixtures/page-nodes.json';
 import { COMPLETE_HERO_UI_CATALOG, HeroUIComponentItem } from '../fixtures/heroui-catalog';
@@ -777,14 +777,45 @@ export default function StudioPage() {
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [redoStack, setRedoStack] = useState<any[]>([]);
 
-  // Apply Theme & Direction to DOM
+  // Track whether theme and direction have been initialized from localStorage
+  const isThemeInitialized = useRef(false);
+
+  // Hydrate Theme & Direction from localStorage on initial load
   useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem('visual-platform-theme') as ThemeMode | null;
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        setThemeMode(savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+      const savedDir = localStorage.getItem('visual-platform-direction') as Direction | null;
+      if (savedDir === 'ltr' || savedDir === 'rtl') {
+        setDirection(savedDir);
+        document.documentElement.setAttribute('dir', savedDir);
+      }
+    } catch (e) {
+      console.warn('Failed to load theme preference from localStorage', e);
+    } finally {
+      isThemeInitialized.current = true;
+    }
+  }, []);
+
+  // Persist Theme changes to DOM and localStorage (only when changed after init)
+  useEffect(() => {
+    if (!isThemeInitialized.current) return;
     document.documentElement.setAttribute('data-theme', themeMode);
-    localStorage.setItem('visual-platform-theme', themeMode);
+    try {
+      localStorage.setItem('visual-platform-theme', themeMode);
+    } catch (e) {}
   }, [themeMode]);
 
+  // Persist Direction changes to DOM and localStorage (only when changed after init)
   useEffect(() => {
+    if (!isThemeInitialized.current) return;
     document.documentElement.setAttribute('dir', direction);
+    try {
+      localStorage.setItem('visual-platform-direction', direction);
+    } catch (e) {}
   }, [direction]);
 
   // Global Keyboard Shortcuts (Ctrl+S to save, Esc to exit preview/modal, P to toggle preview)
