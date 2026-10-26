@@ -324,7 +324,15 @@ export interface SitemapFlowCanvasProps {
   activePageId: string;
   onSelectPage: (pageId: string) => void;
   onOpenPageDesigner: (pageId: string) => void;
-  onAddPage: (page: { title: string; route: string; parentId?: string }) => void;
+  onAddPage: (page: {
+    title: string;
+    route: string;
+    type?: 'page' | 'folder';
+    isHome?: boolean;
+    parentId?: string;
+    requiredRole?: string;
+    status?: 'published' | 'draft';
+  }) => void;
   onDeletePage: (pageId: string) => void;
   onSave?: () => void;
   onExportManifest?: () => void;
@@ -345,11 +353,14 @@ export function SitemapFlowCanvas({
   saveStatus = 'Saved',
   themeMode = 'dark',
 }: SitemapFlowCanvasProps) {
-  // Modal State for Adding Page Node
+  // Modal State for Adding Node (Page, Folder, or Home)
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [newNodeType, setNewNodeType] = useState<'page' | 'folder' | 'home'>('page');
   const [newPageTitle, setNewPageTitle] = useState<string>('');
   const [newPageRoute, setNewPageRoute] = useState<string>('');
   const [newPageParentId, setNewPageParentId] = useState<string>('');
+  const [newNodeRole, setNewNodeRole] = useState<string>('');
+  const [newNodeStatus, setNewNodeStatus] = useState<'published' | 'draft'>('draft');
 
   // Selected Node in Flow
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(activePageId);
@@ -477,7 +488,7 @@ export function SitemapFlowCanvas({
     [onSelectPage],
   );
 
-  // Handle Adding New Node
+  // Handle Adding New Node (Page, Folder, or Home Root)
   const handleCreateNodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPageTitle.trim()) return;
@@ -498,12 +509,19 @@ export function SitemapFlowCanvas({
     onAddPage({
       title: newPageTitle.trim(),
       route: computedRoute,
+      type: newNodeType === 'folder' ? 'folder' : 'page',
+      isHome: newNodeType === 'home',
       parentId: newPageParentId || undefined,
+      requiredRole: newNodeRole.trim() || undefined,
+      status: newNodeStatus,
     });
 
     setNewPageTitle('');
     setNewPageRoute('');
     setNewPageParentId('');
+    setNewNodeRole('');
+    setNewNodeType('page');
+    setNewNodeStatus('draft');
     setShowAddModal(false);
   };
 
@@ -610,7 +628,7 @@ export function SitemapFlowCanvas({
             }}
           >
             <Plus size={14} />
-            <span>Add Page Node</span>
+            <span>Add Node</span>
           </button>
 
           {selectedNodeId && (
@@ -791,15 +809,27 @@ export function SitemapFlowCanvas({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Plus size={18} style={{ color: 'var(--portal-accent, #3b82f6)' }} />
-                <h3
-                  style={{
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    color: 'var(--portal-text-primary, #f8fafc)',
-                  }}
-                >
-                  Add Sitemap Page Node
-                </h3>
+                <div>
+                  <h3
+                    style={{
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      color: 'var(--portal-text-primary, #f8fafc)',
+                      margin: 0,
+                    }}
+                  >
+                    Add Sitemap Node
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--portal-text-muted, #94a3b8)',
+                      margin: '2px 0 0 0',
+                    }}
+                  >
+                    Create a Page, Folder Section, or Home Portal Root
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
@@ -819,6 +849,140 @@ export function SitemapFlowCanvas({
               onSubmit={handleCreateNodeSubmit}
               style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
             >
+              {/* Node Type Selector */}
+              <div>
+                <label
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'var(--portal-text-secondary, #cbd5e1)',
+                    marginBottom: '6px',
+                    display: 'block',
+                  }}
+                >
+                  Node Type *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                  {/* Option 1: Page */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewNodeType('page');
+                      if (newPageRoute === '/admin') setNewPageRoute('/page');
+                    }}
+                    style={{
+                      padding: '8px 6px',
+                      borderRadius: '8px',
+                      border:
+                        newNodeType === 'page'
+                          ? '2px solid var(--portal-accent, #3b82f6)'
+                          : '1px solid var(--portal-border, rgba(255, 255, 255, 0.1))',
+                      background:
+                        newNodeType === 'page'
+                          ? 'rgba(59, 130, 246, 0.15)'
+                          : 'var(--portal-surface-elevated, #0f172a)',
+                      color:
+                        newNodeType === 'page'
+                          ? 'var(--portal-accent, #3b82f6)'
+                          : 'var(--portal-text-secondary, #cbd5e1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <FileCode2 size={16} />
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>Page Node</span>
+                  </button>
+
+                  {/* Option 2: Folder (like Administration) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewNodeType('folder');
+                      if (newPageRoute === '/page' || !newPageRoute) setNewPageRoute('/admin');
+                    }}
+                    style={{
+                      padding: '8px 6px',
+                      borderRadius: '8px',
+                      border:
+                        newNodeType === 'folder'
+                          ? '2px solid #8b5cf6'
+                          : '1px solid var(--portal-border, rgba(255, 255, 255, 0.1))',
+                      background:
+                        newNodeType === 'folder'
+                          ? 'rgba(139, 92, 246, 0.15)'
+                          : 'var(--portal-surface-elevated, #0f172a)',
+                      color:
+                        newNodeType === 'folder'
+                          ? '#a78bfa'
+                          : 'var(--portal-text-secondary, #cbd5e1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Folder size={16} style={{ color: '#f59e0b' }} />
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>Folder Group</span>
+                  </button>
+
+                  {/* Option 3: Home / Portal Root (like Personnel & Directory) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewNodeType('home');
+                    }}
+                    style={{
+                      padding: '8px 6px',
+                      borderRadius: '8px',
+                      border:
+                        newNodeType === 'home'
+                          ? '2px solid #10b981'
+                          : '1px solid var(--portal-border, rgba(255, 255, 255, 0.1))',
+                      background:
+                        newNodeType === 'home'
+                          ? 'rgba(16, 185, 129, 0.15)'
+                          : 'var(--portal-surface-elevated, #0f172a)',
+                      color:
+                        newNodeType === 'home'
+                          ? '#10b981'
+                          : 'var(--portal-text-secondary, #cbd5e1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <Home size={16} />
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>Home / Root</span>
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    fontSize: '0.675rem',
+                    color: 'var(--portal-text-muted, #94a3b8)',
+                    marginTop: '5px',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                  }}
+                >
+                  {newNodeType === 'folder'
+                    ? '📁 Folder: Acts like Administration — groups sub-pages with child routes.'
+                    : newNodeType === 'home'
+                    ? '🌐 Home Root: Sets this page as the primary entry landing point for the portal.'
+                    : '📄 Standard Page: Regular page for placing HeroUI forms, tables, and layouts.'}
+                </div>
+              </div>
+
               <div>
                 <label
                   style={{
@@ -829,19 +993,26 @@ export function SitemapFlowCanvas({
                     display: 'block',
                   }}
                 >
-                  Page Title *
+                  {newNodeType === 'folder' ? 'Folder Title *' : 'Node Title *'}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Products & Catalog"
+                  placeholder={
+                    newNodeType === 'folder'
+                      ? 'e.g. Administration, Operations, Analytics'
+                      : newNodeType === 'home'
+                      ? 'e.g. Personnel & Directory, Enterprise Portal'
+                      : 'e.g. Products & Catalog'
+                  }
                   value={newPageTitle}
                   onChange={(e) => {
-                    setNewPageTitle(e.target.value);
-                    if (!newPageRoute) {
+                    const title = e.target.value;
+                    setNewPageTitle(title);
+                    if (!newPageRoute || newPageRoute.startsWith('/')) {
                       setNewPageRoute(
                         '/' +
-                          e.target.value
+                          title
                             .toLowerCase()
                             .replace(/[^a-z0-9]+/g, '-')
                             .replace(/(^-|-$)/g, ''),
@@ -875,7 +1046,7 @@ export function SitemapFlowCanvas({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. /products"
+                  placeholder={newNodeType === 'folder' ? '/admin' : '/products'}
                   value={newPageRoute}
                   onChange={(e) => setNewPageRoute(e.target.value)}
                   style={{
@@ -901,7 +1072,7 @@ export function SitemapFlowCanvas({
                     display: 'block',
                   }}
                 >
-                  Parent Node (Optional Hierarchy)
+                  Parent Folder (Hierarchy Placement)
                 </label>
                 <select
                   value={newPageParentId}
@@ -916,13 +1087,74 @@ export function SitemapFlowCanvas({
                     color: 'var(--portal-text-primary, #f8fafc)',
                   }}
                 >
-                  <option value="">None (Top-Level Page)</option>
+                  <option value="">None (Top-Level Node)</option>
                   {sitemapTree.map((node) => (
                     <option key={node.id} value={node.id}>
-                      {node.title} ({node.route})
+                      {node.type === 'folder' ? '📁 ' : '📄 '} {node.title} ({node.route})
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Status and Required Role Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: 'var(--portal-text-secondary, #cbd5e1)',
+                      marginBottom: '4px',
+                      display: 'block',
+                    }}
+                  >
+                    Required Role
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. admin, hr.write"
+                    value={newNodeRole}
+                    onChange={(e) => setNewNodeRole(e.target.value)}
+                    style={{
+                      width: '100%',
+                      background: 'var(--portal-surface-elevated, #0f172a)',
+                      border: '1px solid var(--portal-border, rgba(255, 255, 255, 0.15))',
+                      borderRadius: '6px',
+                      padding: '7px 9px',
+                      fontSize: '0.8rem',
+                      color: 'var(--portal-text-primary, #f8fafc)',
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: 'var(--portal-text-secondary, #cbd5e1)',
+                      marginBottom: '4px',
+                      display: 'block',
+                    }}
+                  >
+                    Initial Status
+                  </label>
+                  <select
+                    value={newNodeStatus}
+                    onChange={(e) => setNewNodeStatus(e.target.value as 'published' | 'draft')}
+                    style={{
+                      width: '100%',
+                      background: 'var(--portal-surface-elevated, #0f172a)',
+                      border: '1px solid var(--portal-border, rgba(255, 255, 255, 0.15))',
+                      borderRadius: '6px',
+                      padding: '7px 9px',
+                      fontSize: '0.8rem',
+                      color: 'var(--portal-text-primary, #f8fafc)',
+                    }}
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </div>
               </div>
 
               <div
