@@ -276,10 +276,15 @@ export default function StudioPage() {
       }
       if (Array.isArray(extracted)) {
         updateNodeProperty('items', extracted);
+        const detectedKeys =
+          extracted.length > 0 && typeof extracted[0] === 'object' && extracted[0] !== null
+            ? Object.keys(extracted[0])
+            : [];
         setLiveFormValues((prev) => ({
           ...prev,
           [fieldId + '_api_data']: extracted,
           [fieldId + '_api_status']: `Synced (${extracted.length} items)`,
+          [fieldId + '_available_keys']: detectedKeys,
         }));
         setAccordionApiStatus(`Success: ${extracted.length} items loaded`);
       } else {
@@ -4040,6 +4045,268 @@ export default function StudioPage() {
                                 {accordionApiStatus}
                               </div>
                             )}
+
+                            {/* RFC 9535 Dynamic Field Mapping Controls */}
+                            <div
+                              style={{
+                                marginTop: '0.65rem',
+                                paddingTop: '0.65rem',
+                                borderTop: '1px dashed var(--portal-border)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.5rem',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontSize: '0.675rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                    color: 'var(--portal-accent)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                >
+                                  <LinkIcon size={11} /> Field Mapping (@.path)
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: '0.625rem',
+                                    color: 'var(--portal-text-muted)',
+                                    fontFamily: 'var(--font-mono)',
+                                  }}
+                                >
+                                  RFC 9535
+                                </span>
+                              </div>
+
+                              {/* Detected API Record Keys Pills */}
+                              {liveFormValues[selectedNode.id + '_available_keys'] &&
+                                (liveFormValues[selectedNode.id + '_available_keys'] as string[])
+                                  .length > 0 && (
+                                  <div
+                                    style={{
+                                      background: 'var(--portal-surface-elevated)',
+                                      padding: '5px 8px',
+                                      borderRadius: 'var(--radius-sm)',
+                                      border: '1px solid var(--portal-border)',
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: '0.625rem',
+                                        color: 'var(--portal-text-muted)',
+                                        marginBottom: '3px',
+                                      }}
+                                    >
+                                      Detected Record Properties:
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                      {(
+                                        liveFormValues[
+                                          selectedNode.id + '_available_keys'
+                                        ] as string[]
+                                      ).map((k) => (
+                                        <button
+                                          key={k}
+                                          type="button"
+                                          onClick={() => {
+                                            const current = selectedNode.props.fieldMappings || {};
+                                            if (!current.title || current.title === '@.title') {
+                                              updateNodeProperty('fieldMappings', {
+                                                ...current,
+                                                title: `@.${k}`,
+                                              });
+                                            } else if (
+                                              !current.content ||
+                                              current.content === '@.content'
+                                            ) {
+                                              updateNodeProperty('fieldMappings', {
+                                                ...current,
+                                                content: `@.${k}`,
+                                              });
+                                            }
+                                          }}
+                                          title={`Click to map to Title or Content slot`}
+                                          style={{
+                                            fontSize: '0.625rem',
+                                            fontFamily: 'var(--font-mono)',
+                                            background: 'rgba(59, 130, 246, 0.1)',
+                                            color: 'var(--portal-accent)',
+                                            padding: '1px 6px',
+                                            borderRadius: '3px',
+                                            border: '1px solid rgba(59, 130, 246, 0.25)',
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          @{'.'}
+                                          {k}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                              {/* Slot 1: Title Slot */}
+                              <div>
+                                <label
+                                  htmlFor="input-mapping-title"
+                                  style={{
+                                    fontSize: '0.675rem',
+                                    fontWeight: 600,
+                                    color: 'var(--portal-text-secondary)',
+                                    display: 'block',
+                                    marginBottom: '2px',
+                                  }}
+                                >
+                                  Item Title Slot (e.g. @.title, @.question, @.heading)
+                                </label>
+                                <input
+                                  id="input-mapping-title"
+                                  type="text"
+                                  placeholder="@.title"
+                                  value={selectedNode.props.fieldMappings?.title || '@.title'}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const current = selectedNode.props.fieldMappings || {};
+                                    updateNodeProperty('fieldMappings', { ...current, title: val });
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    background: 'var(--portal-surface-elevated)',
+                                    border: '1px solid var(--portal-border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    padding: '4px 8px',
+                                    color: 'var(--portal-text-primary)',
+                                    fontSize: '0.725rem',
+                                    fontFamily: 'var(--font-mono)',
+                                  }}
+                                />
+                              </div>
+
+                              {/* Slot 2: Content Slot */}
+                              <div>
+                                <label
+                                  htmlFor="input-mapping-content"
+                                  style={{
+                                    fontSize: '0.675rem',
+                                    fontWeight: 600,
+                                    color: 'var(--portal-text-secondary)',
+                                    display: 'block',
+                                    marginBottom: '2px',
+                                  }}
+                                >
+                                  Item Content Slot (e.g. @.content, @.answer, @.body)
+                                </label>
+                                <input
+                                  id="input-mapping-content"
+                                  type="text"
+                                  placeholder="@.content"
+                                  value={selectedNode.props.fieldMappings?.content || '@.content'}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const current = selectedNode.props.fieldMappings || {};
+                                    updateNodeProperty('fieldMappings', {
+                                      ...current,
+                                      content: val,
+                                    });
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    background: 'var(--portal-surface-elevated)',
+                                    border: '1px solid var(--portal-border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    padding: '4px 8px',
+                                    color: 'var(--portal-text-primary)',
+                                    fontSize: '0.725rem',
+                                    fontFamily: 'var(--font-mono)',
+                                  }}
+                                />
+                              </div>
+
+                              {/* Slot 3: Item ID Slot */}
+                              <div>
+                                <label
+                                  htmlFor="input-mapping-id"
+                                  style={{
+                                    fontSize: '0.675rem',
+                                    fontWeight: 600,
+                                    color: 'var(--portal-text-secondary)',
+                                    display: 'block',
+                                    marginBottom: '2px',
+                                  }}
+                                >
+                                  Item Key / ID Slot (e.g. @.id, @.policyId, @.code)
+                                </label>
+                                <input
+                                  id="input-mapping-id"
+                                  type="text"
+                                  placeholder="@.id"
+                                  value={selectedNode.props.fieldMappings?.id || '@.id'}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const current = selectedNode.props.fieldMappings || {};
+                                    updateNodeProperty('fieldMappings', { ...current, id: val });
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    background: 'var(--portal-surface-elevated)',
+                                    border: '1px solid var(--portal-border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    padding: '4px 8px',
+                                    color: 'var(--portal-text-primary)',
+                                    fontSize: '0.725rem',
+                                    fontFamily: 'var(--font-mono)',
+                                  }}
+                                />
+                              </div>
+
+                              {/* Slot 4: Icon Slot */}
+                              <div>
+                                <label
+                                  htmlFor="input-mapping-icon"
+                                  style={{
+                                    fontSize: '0.675rem',
+                                    fontWeight: 600,
+                                    color: 'var(--portal-text-secondary)',
+                                    display: 'block',
+                                    marginBottom: '2px',
+                                  }}
+                                >
+                                  Icon / Badge Slot (e.g. @.icon, @.iconName)
+                                </label>
+                                <input
+                                  id="input-mapping-icon"
+                                  type="text"
+                                  placeholder="@.icon"
+                                  value={selectedNode.props.fieldMappings?.icon || '@.icon'}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const current = selectedNode.props.fieldMappings || {};
+                                    updateNodeProperty('fieldMappings', { ...current, icon: val });
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    background: 'var(--portal-surface-elevated)',
+                                    border: '1px solid var(--portal-border)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    padding: '4px 8px',
+                                    color: 'var(--portal-text-primary)',
+                                    fontSize: '0.725rem',
+                                    fontFamily: 'var(--font-mono)',
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
                         )}
 
@@ -6770,18 +7037,62 @@ function renderHeroUIComponent(
     const rawItems =
       isApiSource && Array.isArray(apiData) && apiData.length > 0 ? apiData : field.props.items;
 
+    const fieldMappings = field.props.fieldMappings || {};
+    const titlePath = (fieldMappings.title || '@.title').replace(/^@\./, '');
+    const contentPath = (fieldMappings.content || '@.content').replace(/^@\./, '');
+    const idPath = (fieldMappings.id || '@.id').replace(/^@\./, '');
+    const iconPath = (fieldMappings.icon || '@.icon').replace(/^@\./, '');
+
+    const resolveFieldVal = (obj: any, path: string) => {
+      if (!obj || !path) return undefined;
+      const parts = path.split('.');
+      let val = obj;
+      for (const p of parts) {
+        if (val && typeof val === 'object' && val[p] !== undefined) {
+          val = val[p];
+        } else {
+          return undefined;
+        }
+      }
+      return val;
+    };
+
     const accordionItems: Array<{ id: string; title: string; content: string; icon?: string }> =
       Array.isArray(rawItems) && rawItems.length > 0
-        ? rawItems.map((it: any, idx: number) =>
-            typeof it === 'string'
-              ? {
-                  id: `item-${idx + 1}`,
-                  title: it,
-                  content: `Detailed operational parameters for ${it}.`,
-                  icon: 'FileText',
-                }
-              : it,
-          )
+        ? rawItems.map((it: any, idx: number) => {
+            if (typeof it === 'string') {
+              return {
+                id: `item-${idx + 1}`,
+                title: it,
+                content: `Detailed operational parameters for ${it}.`,
+                icon: 'FileText',
+              };
+            }
+            const resolvedTitle =
+              resolveFieldVal(it, titlePath) ??
+              it.title ??
+              it.heading ??
+              it.question ??
+              it.name ??
+              `Item ${idx + 1}`;
+            const resolvedContent =
+              resolveFieldVal(it, contentPath) ??
+              it.content ??
+              it.description ??
+              it.answer ??
+              it.body ??
+              '';
+            const resolvedId =
+              resolveFieldVal(it, idPath) ?? it.id ?? it.key ?? it.code ?? `item-${idx + 1}`;
+            const resolvedIcon = resolveFieldVal(it, iconPath) ?? it.icon ?? it.iconName;
+
+            return {
+              id: String(resolvedId),
+              title: String(resolvedTitle),
+              content: String(resolvedContent),
+              icon: typeof resolvedIcon === 'string' ? resolvedIcon : undefined,
+            };
+          })
         : isSingleDisclosure
           ? [
               {
