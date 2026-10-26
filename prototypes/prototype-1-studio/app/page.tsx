@@ -1598,11 +1598,12 @@ export default function StudioPage() {
                     leftPanelTab === 'sitemap'
                       ? 'var(--portal-accent)'
                       : 'var(--portal-text-secondary)',
-                  border: 'none',
-                  borderBottom:
+                  borderWidth: '0 0 2px 0',
+                  borderStyle: 'solid',
+                  borderColor:
                     leftPanelTab === 'sitemap'
-                      ? '2px solid var(--portal-accent)'
-                      : '2px solid transparent',
+                      ? 'var(--portal-accent)'
+                      : 'transparent',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -1646,11 +1647,12 @@ export default function StudioPage() {
                     leftPanelTab === 'components'
                       ? 'var(--portal-accent)'
                       : 'var(--portal-text-secondary)',
-                  border: 'none',
-                  borderBottom:
+                  borderWidth: '0 0 2px 0',
+                  borderStyle: 'solid',
+                  borderColor:
                     leftPanelTab === 'components'
-                      ? '2px solid var(--portal-accent)'
-                      : '2px solid transparent',
+                      ? 'var(--portal-accent)'
+                      : 'transparent',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -2248,6 +2250,7 @@ export default function StudioPage() {
         {/* Center: 12-Column Visual Grid Canvas with Move Controls & Drop Zone OR React Flow Sitemap Canvas */}
         {canvasViewMode === 'flow' ? (
           <main
+            key="canvas-flow-main"
             style={{
               flex: 1,
               background: 'var(--portal-bg)',
@@ -2271,6 +2274,7 @@ export default function StudioPage() {
           </main>
         ) : (
           <main
+            key="canvas-designer-main"
             style={{
               flex: 1,
               background: 'var(--portal-bg)',
@@ -3513,6 +3517,7 @@ export default function StudioPage() {
           >
             {canvasViewMode === 'flow' ? (
               <div
+                key="inspector-flow-panel"
                 style={{
                   padding: '1.25rem',
                   display: 'flex',
@@ -3655,7 +3660,8 @@ export default function StudioPage() {
                     style={{
                       background: 'var(--portal-accent)',
                       color: '#fff',
-                      border: 'none',
+                      borderWidth: 0,
+                      borderStyle: 'none',
                       borderRadius: '6px',
                       padding: '9px 14px',
                       fontSize: '0.8rem',
@@ -3687,7 +3693,7 @@ export default function StudioPage() {
                 </div>
               </div>
             ) : (
-              <div>
+              <div key="inspector-designer-panel">
                 <div
                   style={{
                     padding: '0.85rem 1rem',
@@ -3885,11 +3891,12 @@ export default function StudioPage() {
                   flex: 1,
                   padding: '8px 4px',
                   background: 'transparent',
-                  border: 'none',
-                  borderBottom:
+                  borderWidth: '0 0 2px 0',
+                  borderStyle: 'solid',
+                  borderColor:
                     inspectorTab === 'properties'
-                      ? '2px solid var(--portal-accent)'
-                      : '2px solid transparent',
+                      ? 'var(--portal-accent)'
+                      : 'transparent',
                   color:
                     inspectorTab === 'properties'
                       ? 'var(--portal-accent)'
@@ -3907,11 +3914,12 @@ export default function StudioPage() {
                   flex: 1,
                   padding: '8px 4px',
                   background: 'transparent',
-                  border: 'none',
-                  borderBottom:
+                  borderWidth: '0 0 2px 0',
+                  borderStyle: 'solid',
+                  borderColor:
                     inspectorTab === 'grid'
-                      ? '2px solid var(--portal-accent)'
-                      : '2px solid transparent',
+                      ? 'var(--portal-accent)'
+                      : 'transparent',
                   color:
                     inspectorTab === 'grid'
                       ? 'var(--portal-accent)'
@@ -3929,11 +3937,12 @@ export default function StudioPage() {
                   flex: 1,
                   padding: '8px 4px',
                   background: 'transparent',
-                  border: 'none',
-                  borderBottom:
+                  borderWidth: '0 0 2px 0',
+                  borderStyle: 'solid',
+                  borderColor:
                     inspectorTab === 'binding'
-                      ? '2px solid var(--portal-accent)'
-                      : '2px solid transparent',
+                      ? 'var(--portal-accent)'
+                      : 'transparent',
                   color:
                     inspectorTab === 'binding'
                       ? 'var(--portal-accent)'
@@ -3951,11 +3960,12 @@ export default function StudioPage() {
                   flex: 1,
                   padding: '8px 4px',
                   background: 'transparent',
-                  border: 'none',
-                  borderBottom:
+                  borderWidth: '0 0 2px 0',
+                  borderStyle: 'solid',
+                  borderColor:
                     inspectorTab === 'permissions'
-                      ? '2px solid var(--portal-accent)'
-                      : '2px solid transparent',
+                      ? 'var(--portal-accent)'
+                      : 'transparent',
                   color:
                     inspectorTab === 'permissions'
                       ? 'var(--portal-accent)'
@@ -8034,8 +8044,9 @@ function renderHeroUIComponent(
                 padding: '4px 8px',
                 borderRadius: 'var(--radius-sm) var(--radius-sm) 0 0',
                 color: idx === 0 ? 'var(--portal-accent)' : 'var(--portal-text-muted)',
-                borderBottom:
-                  idx === 0 ? '2px solid var(--portal-accent)' : '2px solid transparent',
+                borderWidth: '0 0 2px 0',
+                borderStyle: 'solid',
+                borderColor: idx === 0 ? 'var(--portal-accent)' : 'transparent',
                 cursor: 'pointer',
               }}
             >
