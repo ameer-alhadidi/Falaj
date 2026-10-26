@@ -334,6 +334,10 @@ export interface SitemapFlowCanvasProps {
     status?: 'published' | 'draft';
   }) => void;
   onDeletePage: (pageId: string) => void;
+  onLinkNodes?: (sourceId: string, targetId: string) => void;
+  onUnlinkEdge?: (edgeId: string) => void;
+  onFlowEdgesChange?: (edges: Edge[]) => void;
+  onNodePositionsChange?: (positions: Record<string, { x: number; y: number }>) => void;
   onSave?: () => void;
   onExportManifest?: () => void;
   saveStatus?: 'Saved' | 'Unsaved changes';
@@ -348,6 +352,10 @@ export function SitemapFlowCanvas({
   onOpenPageDesigner,
   onAddPage,
   onDeletePage,
+  onLinkNodes,
+  onUnlinkEdge,
+  onFlowEdgesChange,
+  onNodePositionsChange,
   onSave,
   onExportManifest,
   saveStatus = 'Saved',
@@ -368,7 +376,7 @@ export function SitemapFlowCanvas({
   // Register Custom Node Types
   const nodeTypes = useMemo(() => ({ sitemapNode: CustomSitemapNode }), []);
 
-  // Compute Initial Nodes and Edges from Sitemap Tree
+  // Compute Initial Nodes and Edges from Sitemap Tree and localStorage
   const { initialNodes, initialEdges } = useMemo(() => {
     const nodes: Node<SitemapNodeData>[] = [];
     const edges: Edge[] = [];
@@ -378,12 +386,29 @@ export function SitemapFlowCanvas({
     const horizontalGap = 320;
     const verticalGap = 200;
 
+    // Load persisted positions and flow edges from storage
+    let savedPositions: Record<string, { x: number; y: number }> = {};
+    let savedFlowEdges: Edge[] = [];
+    try {
+      const posStr = localStorage.getItem('falaj_sitemap_node_positions');
+      if (posStr) savedPositions = JSON.parse(posStr) || {};
+      const edgeStr = localStorage.getItem('falaj_sitemap_flow_edges');
+      if (edgeStr) savedFlowEdges = JSON.parse(edgeStr) || [];
+    } catch (e) {}
+
     // Traverse tree recursively to generate layout coordinates
     const traverse = (nodeList: SitemapNode[], parentId?: string, depth = 0, offsetX = 80) => {
       let childX = offsetX;
-      nodeList.forEach((item, index) => {
+      nodeList.forEach((item) => {
         const xPos = depth === 0 ? currentX : childX;
         const yPos = baseY + depth * verticalGap;
+
+        // Use custom position if saved by user dragging
+        const savedPos = savedPositions[item.id];
+        const finalPos =
+          savedPos && typeof savedPos.x === 'number' && typeof savedPos.y === 'number'
+            ? { x: savedPos.x, y: savedPos.y }
+            : { x: xPos, y: yPos };
 
         // Calculate element count from pagesRegistry
         const pageDef = pagesRegistry[item.id];
@@ -393,7 +418,7 @@ export function SitemapFlowCanvas({
         nodes.push({
           id: item.id,
           type: 'sitemapNode',
-          position: { x: xPos, y: yPos },
+          position: finalPos,
           data: {
             id: item.id,
             title: item.title,
@@ -440,7 +465,29 @@ export function SitemapFlowCanvas({
     };
 
     traverse(sitemapTree);
-    return { initialNodes: nodes, initialEdges: edges };
+
+    // Merge saved custom flow edges so user-connected links are preserved
+    const edgeMap = new Map<string, Edge>();
+    edges.forEach((e) => edgeMap.set(`${e.source}-${e.target}`, e));
+    savedFlowEdges.forEach((e) => {
+      if (e.source && e.target) {
+        edgeMap.set(`${e.source}-${e.target}`, {
+          ...e,
+          id: e.id || `edge-${e.source}-${e.target}`,
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: 'var(--portal-accent, #3b82f6)', strokeWidth: 2 },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: 'var(--portal-accent, #3b82f6)',
+            width: 16,
+            height: 16,
+          },
+        });
+      }
+    });
+
+    return { initialNodes: nodes, initialEdges: Array.from(edgeMap.values()) };
   }, [sitemapTree, pagesRegistry, activePageId, onOpenPageDesigner, onDeletePage]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -448,26 +495,147 @@ export function SitemapFlowCanvas({
 
   // Sync state whenever sitemapTree, activePageId, or pagesRegistry updates
   useEffect(() => {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
+    setNodes((currentNodes) => {
+      const posMap = new Map<string, { x: number; y: number }>();
+      currentNodes.forEach((n) => posMap.set(n.id, n.position));
+      return initialNodes.map((n) => {
+        const existingPos = posMap.get(n.id);
+        return existingPos ? { ...n, position: existingPos } : n;
+      });
+    });
+
+    setEdges((currentEdges) => {
+      const edgeMap = new Map<string, Edge>();
+      initialEdges.forEach((e) => edgeMap.set(`${e.source}-${e.target}`, e));
+      currentEdges.forEach((e) => edgeMap.set(`${e.source}-${e.target}`, e));
+      return Array.from(edgeMap.values());
+    });
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
-  // Connect handler
+  // Client hydration for saved positions and edges
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const edgeStr = localStorage.getItem('falaj_sitemap_flow_edges');
+      if (edgeStr) {
+        const parsedEdges: Edge[] = JSON.parse(edgeStr);
+        if (Array.isArray(parsedEdges) && parsedEdges.length > 0) {
+          setEdges((current) => {
+            const edgeMap = new Map<string, Edge>();
+            current.forEach((e) => edgeMap.set(`${e.source}-${e.target}`, e));
+            parsedEdges.forEach((e) => {
+              if (e.source && e.target) {
+                edgeMap.set(`${e.source}-${e.target}`, {
+                  ...e,
+                  id: e.id || `edge-${e.source}-${e.target}`,
+                  type: 'smoothstep',
+                  animated: true,
+                  style: { stroke: 'var(--portal-accent, #3b82f6)', strokeWidth: 2 },
+                  markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: 'var(--portal-accent, #3b82f6)',
+                    width: 16,
+                    height: 16,
+                  },
+                });
+              }
+            });
+            return Array.from(edgeMap.values());
+          });
+        }
+      }
+
+      const posStr = localStorage.getItem('falaj_sitemap_node_positions');
+      if (posStr) {
+        const parsedPositions: Record<string, { x: number; y: number }> = JSON.parse(posStr);
+        if (parsedPositions && typeof parsedPositions === 'object') {
+          setNodes((current) =>
+            current.map((n) => {
+              const pos = parsedPositions[n.id];
+              return pos && typeof pos.x === 'number' && typeof pos.y === 'number'
+                ? { ...n, position: pos }
+                : n;
+            }),
+          );
+        }
+      }
+    } catch (e) {
+      console.warn('Could not hydrate flow edges or positions', e);
+    }
+  }, [setEdges, setNodes]);
+
+  // Connect handler (Save link between nodes)
   const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            type: 'smoothstep',
-            animated: true,
-            style: { stroke: 'var(--portal-accent, #3b82f6)', strokeWidth: 2 },
-            markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--portal-accent, #3b82f6)' },
-          },
-          eds,
-        ),
-      ),
-    [setEdges],
+    (params: Connection) => {
+      if (!params.source || !params.target) return;
+      const edgeId = `edge-${params.source}-${params.target}`;
+      const newEdge: Edge = {
+        ...params,
+        id: edgeId,
+        source: params.source,
+        target: params.target,
+        type: 'smoothstep',
+        animated: true,
+        style: { stroke: 'var(--portal-accent, #3b82f6)', strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--portal-accent, #3b82f6)' },
+      };
+
+      setEdges((eds) => {
+        const exists = eds.some((e) => e.source === params.source && e.target === params.target);
+        const updated = exists ? eds : addEdge(newEdge, eds);
+        try {
+          localStorage.setItem('falaj_sitemap_flow_edges', JSON.stringify(updated));
+        } catch (e) {}
+        if (onFlowEdgesChange) onFlowEdgesChange(updated);
+        return updated;
+      });
+
+      if (onLinkNodes) {
+        onLinkNodes(params.source, params.target);
+      }
+    },
+    [setEdges, onFlowEdgesChange, onLinkNodes],
+  );
+
+  // Node drag stop handler to persist custom node positions
+  const onNodeDragStop = useCallback(
+    (_event: MouseEvent | TouchEvent, _node: Node) => {
+      setNodes((nds) => {
+        const positions: Record<string, { x: number; y: number }> = {};
+        nds.forEach((n) => {
+          positions[n.id] = n.position;
+        });
+        try {
+          localStorage.setItem('falaj_sitemap_node_positions', JSON.stringify(positions));
+        } catch (e) {}
+        if (onNodePositionsChange) onNodePositionsChange(positions);
+        return nds;
+      });
+    },
+    [setNodes, onNodePositionsChange],
+  );
+
+  // Handle Edge change (e.g. edge deletion)
+  const handleEdgesChange = useCallback(
+    (changes: any) => {
+      onEdgesChange(changes);
+      const removeChanges = changes.filter((c: any) => c.type === 'remove');
+      if (removeChanges.length > 0) {
+        setEdges((current) => {
+          try {
+            localStorage.setItem('falaj_sitemap_flow_edges', JSON.stringify(current));
+          } catch (e) {}
+          if (onFlowEdgesChange) onFlowEdgesChange(current);
+          return current;
+        });
+        removeChanges.forEach((c: any) => {
+          if (c.id && onUnlinkEdge) {
+            onUnlinkEdge(c.id);
+          }
+        });
+      }
+    },
+    [onEdgesChange, setEdges, onFlowEdgesChange, onUnlinkEdge],
   );
 
   // Double Click Node -> Immediately switch into Page Designer
@@ -657,7 +825,17 @@ export function SitemapFlowCanvas({
           {onSave && (
             <button
               id="btn-flow-save-sitemap"
-              onClick={onSave}
+              onClick={() => {
+                try {
+                  localStorage.setItem('falaj_sitemap_flow_edges', JSON.stringify(edges));
+                  const positions: Record<string, { x: number; y: number }> = {};
+                  nodes.forEach((n) => {
+                    positions[n.id] = n.position;
+                  });
+                  localStorage.setItem('falaj_sitemap_node_positions', JSON.stringify(positions));
+                } catch (e) {}
+                onSave();
+              }}
               title="Save Project & Sitemap Changes (Ctrl+S / Cmd+S)"
               style={{
                 background:
@@ -734,8 +912,9 @@ export function SitemapFlowCanvas({
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
+          onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           onNodeClick={handleNodeClick}
           onNodeDoubleClick={handleNodeDoubleClick}

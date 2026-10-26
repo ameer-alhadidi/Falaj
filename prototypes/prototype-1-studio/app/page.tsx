@@ -722,6 +722,49 @@ export default function StudioPage() {
     setSaveStatus('Unsaved changes');
   };
 
+  // Link Nodes in Flow Canvas (Nest targetId under sourceId in sitemap hierarchy)
+  const handleLinkNodes = (sourceId: string, targetId: string) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+
+    let sourceNode: SitemapNode | null = null;
+    let targetNode: SitemapNode | null = null;
+
+    const findNodes = (nodes: SitemapNode[]) => {
+      for (const n of nodes) {
+        if (n.id === sourceId) sourceNode = n;
+        if (n.id === targetId) targetNode = n;
+        if (n.children && n.children.length > 0) findNodes(n.children);
+      }
+    };
+    findNodes(sitemapTree);
+
+    if (sourceNode && targetNode) {
+      if (!isDescendantNode(targetNode, sourceId)) {
+        handleMoveSitemapNode(targetId, sourceId, 'inside');
+      }
+    }
+    setSaveStatus('Unsaved changes');
+  };
+
+  // Unlink Nodes in Flow Canvas (Move child back to root level when edge is removed)
+  const handleUnlinkEdge = (edgeId: string) => {
+    if (!edgeId || !edgeId.startsWith('edge-')) return;
+    const parts = edgeId.replace('edge-', '').split('-');
+    if (parts.length >= 2) {
+      const targetId = parts.slice(1).join('-');
+      handleMoveSitemapNodeToRoot(targetId);
+      setSaveStatus('Unsaved changes');
+    }
+  };
+
+  const handleFlowEdgesChange = (_edges: any[]) => {
+    setSaveStatus('Unsaved changes');
+  };
+
+  const handleNodePositionsChange = (_positions: Record<string, { x: number; y: number }>) => {
+    setSaveStatus('Unsaved changes');
+  };
+
   // Hydrate sitemap and pages from localStorage on initial load
   useEffect(() => {
     try {
@@ -1193,7 +1236,8 @@ export default function StudioPage() {
 
   // Render a node in the Sitemap Hierarchy Tree with full Drag-and-Drop
   const renderSitemapNode = (node: SitemapNode, depth = 0) => {
-    const isFolder = node.type === 'folder';
+    const hasChildren = !!(node.children && node.children.length > 0);
+    const isFolder = node.type === 'folder' || hasChildren;
     const isCollapsed = !!collapsedFolders[node.id];
     const isActive = node.id === activePageId;
     const isDragged = draggedSitemapId === node.id;
@@ -1348,14 +1392,14 @@ export default function StudioPage() {
               <span style={{ width: '13px', display: 'inline-block' }} />
             )}
 
-            {isFolder ? (
+            {node.isHome ? (
+              <Globe size={14} style={{ color: 'var(--portal-accent)', flexShrink: 0 }} />
+            ) : isFolder ? (
               isCollapsed ? (
                 <Folder size={14} style={{ color: '#f59e0b', flexShrink: 0 }} />
               ) : (
                 <FolderOpen size={14} style={{ color: '#f59e0b', flexShrink: 0 }} />
               )
-            ) : node.isHome ? (
-              <Globe size={14} style={{ color: 'var(--portal-accent)', flexShrink: 0 }} />
             ) : (
               <FileText
                 size={14}
@@ -2747,6 +2791,10 @@ export default function StudioPage() {
               onOpenPageDesigner={handleOpenPageDesigner}
               onAddPage={handleAddPageFromFlow}
               onDeletePage={handleDeletePage}
+              onLinkNodes={handleLinkNodes}
+              onUnlinkEdge={handleUnlinkEdge}
+              onFlowEdgesChange={handleFlowEdgesChange}
+              onNodePositionsChange={handleNodePositionsChange}
               onSave={handleSaveProject}
               onExportManifest={handleExportManifest}
               saveStatus={saveStatus}
