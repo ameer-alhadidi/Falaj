@@ -323,6 +323,11 @@ export default function StudioPage() {
   const [newPageTitle, setNewPageTitle] = useState<string>('');
   const [newPageRoute, setNewPageRoute] = useState<string>('');
 
+  // Sitemap Tree Drag & Drop Reordering and Nesting State
+  const [draggedSitemapId, setDraggedSitemapId] = useState<string | null>(null);
+  const [dragOverSitemapId, setDragOverSitemapId] = useState<string | null>(null);
+  const [dragOverPosition, setDragOverPosition] = useState<'before' | 'after' | 'inside' | null>(null);
+
   // Page Nodes State
   const [formFields, setFormFields] = useState<any[]>(INITIAL_FORM_FIELDS);
   const [pageNodes, setPageNodes] = useState(initialPageData.nodes);
@@ -566,6 +571,134 @@ export default function StudioPage() {
       setSitemapTree((prev) => attachChild(prev));
     } else {
       setSitemapTree((prev) => [...prev, newSitemapNode]);
+    }
+    setSaveStatus('Unsaved changes');
+  };
+
+  // Helper to test if a node is an ancestor of target (prevents cyclic nesting)
+  const isDescendantNode = (parent: SitemapNode, targetId: string): boolean => {
+    if (parent.id === targetId) return true;
+    if (parent.children && parent.children.length > 0) {
+      return parent.children.some((child) => isDescendantNode(child, targetId));
+    }
+    return false;
+  };
+
+  // Move Sitemap Node (Reorder adjacent or nest inside folder)
+  const handleMoveSitemapNode = (
+    sourceId: string,
+    targetId: string,
+    position: 'before' | 'after' | 'inside'
+  ) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+
+    // Find and extract source node
+    let extracted: SitemapNode | null = null;
+    const removeSource = (nodes: SitemapNode[]): SitemapNode[] => {
+      const res: SitemapNode[] = [];
+      for (const n of nodes) {
+        if (n.id === sourceId) {
+          extracted = n;
+        } else {
+          const clone = { ...n };
+          if (clone.children) {
+            clone.children = removeSource(clone.children);
+          }
+          res.push(clone);
+        }
+      }
+      return res;
+    };
+
+    const treeWithoutSource = removeSource(sitemapTree);
+    if (!extracted) return;
+
+    // Prevent dragging a parent folder into its own children/descendants
+    if (isDescendantNode(extracted, targetId)) {
+      return;
+    }
+
+    let updatedTree: SitemapNode[];
+
+    if (position === 'inside') {
+      // Nest as child of target folder (or convert target to folder)
+      const insertInside = (nodes: SitemapNode[]): SitemapNode[] => {
+        return nodes.map((n) => {
+          if (n.id === targetId) {
+            return {
+              ...n,
+              type: 'folder' as const,
+              children: [...(n.children || []), extracted!],
+            };
+          }
+          if (n.children) {
+            return { ...n, children: insertInside(n.children) };
+          }
+          return n;
+        });
+      };
+      updatedTree = insertInside(treeWithoutSource);
+      // Automatically expand target folder so the user sees the nested item
+      setCollapsedFolders((prev) => ({ ...prev, [targetId]: false }));
+    } else {
+      // Insert adjacent (before or after target)
+      const insertAdjacent = (nodes: SitemapNode[]): SitemapNode[] => {
+        const targetIdx = nodes.findIndex((n) => n.id === targetId);
+        if (targetIdx !== -1) {
+          const copy = [...nodes];
+          const insertIdx = position === 'before' ? targetIdx : targetIdx + 1;
+          copy.splice(insertIdx, 0, extracted!);
+          return copy;
+        }
+        return nodes.map((n) => {
+          if (n.children) {
+            return { ...n, children: insertAdjacent(n.children) };
+          }
+          return n;
+        });
+      };
+      updatedTree = insertAdjacent(treeWithoutSource);
+    }
+
+    setSitemapTree(updatedTree);
+    try {
+      localStorage.setItem('falaj_sitemap_tree', JSON.stringify(updatedTree));
+    } catch (e) {
+      console.warn('Failed to persist sitemap tree', e);
+    }
+    setSaveStatus('Unsaved changes');
+  };
+
+  // Move Sitemap Node out to the top/root level
+  const handleMoveSitemapNodeToRoot = (sourceId: string) => {
+    if (!sourceId) return;
+
+    let extracted: SitemapNode | null = null;
+    const removeSource = (nodes: SitemapNode[]): SitemapNode[] => {
+      const res: SitemapNode[] = [];
+      for (const n of nodes) {
+        if (n.id === sourceId) {
+          extracted = n;
+        } else {
+          const clone = { ...n };
+          if (clone.children) {
+            clone.children = removeSource(clone.children);
+          }
+          res.push(clone);
+        }
+      }
+      return res;
+    };
+
+    const treeWithoutSource = removeSource(sitemapTree);
+    if (!extracted) return;
+
+    const updatedTree = [...treeWithoutSource, extracted];
+    setSitemapTree(updatedTree);
+    try {
+      localStorage.setItem('falaj_sitemap_tree', JSON.stringify(updatedTree));
+    } catch (e) {
+      console.warn('Failed to persist sitemap tree', e);
     }
     setSaveStatus('Unsaved changes');
   };
@@ -1008,16 +1141,95 @@ export default function StudioPage() {
   const allowedCount = Object.values(adminAllowedComponents).filter(Boolean).length;
   const totalCount = COMPLETE_HERO_UI_CATALOG.length;
 
-  // Render a node in the Sitemap Hierarchy Tree
+  // Render a node in the Sitemap Hierarchy Tree with full Drag-and-Drop
   const renderSitemapNode = (node: SitemapNode, depth = 0) => {
     const isFolder = node.type === 'folder';
     const isCollapsed = !!collapsedFolders[node.id];
     const isActive = node.id === activePageId;
+    const isDragged = draggedSitemapId === node.id;
+    const isDragOver = dragOverSitemapId === node.id;
+
+    // Drop indicator styling
+    let dropBoxShadow = 'none';
+    let dropOutline = 'none';
+    let dropBg = isActive ? 'rgba(59, 130, 246, 0.14)' : 'transparent';
+
+    if (isDragOver && !isDragged) {
+      if (dragOverPosition === 'before') {
+        dropBoxShadow = '0 -2px 0 0 var(--portal-accent)';
+      } else if (dragOverPosition === 'after') {
+        dropBoxShadow = '0 2px 0 0 var(--portal-accent)';
+      } else if (dragOverPosition === 'inside') {
+        dropBg = 'rgba(59, 130, 246, 0.2)';
+        dropOutline = '1.5px dashed var(--portal-accent)';
+      }
+    }
 
     return (
       <div key={node.id} style={{ display: 'flex', flexDirection: 'column' }}>
         <div
           id={`sitemap-node-${node.id}`}
+          draggable={!node.isHome}
+          onDragStart={(e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData('text/plain', node.id);
+            e.dataTransfer.effectAllowed = 'move';
+            setDraggedSitemapId(node.id);
+          }}
+          onDragEnd={(e) => {
+            e.stopPropagation();
+            setDraggedSitemapId(null);
+            setDragOverSitemapId(null);
+            setDragOverPosition(null);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!draggedSitemapId || draggedSitemapId === node.id) return;
+            e.dataTransfer.dropEffect = 'move';
+
+            const rect = e.currentTarget.getBoundingClientRect();
+            const relativeY = e.clientY - rect.top;
+            const height = rect.height;
+
+            let pos: 'before' | 'after' | 'inside';
+            if (isFolder) {
+              if (relativeY < height * 0.28) {
+                pos = 'before';
+              } else if (relativeY > height * 0.72) {
+                pos = 'after';
+              } else {
+                pos = 'inside';
+              }
+            } else {
+              pos = relativeY < height * 0.5 ? 'before' : 'after';
+            }
+
+            if (dragOverSitemapId !== node.id || dragOverPosition !== pos) {
+              setDragOverSitemapId(node.id);
+              setDragOverPosition(pos);
+            }
+          }}
+          onDragLeave={(e) => {
+            e.stopPropagation();
+            if (e.currentTarget === e.target) {
+              if (dragOverSitemapId === node.id) {
+                setDragOverSitemapId(null);
+                setDragOverPosition(null);
+              }
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const sourceId = e.dataTransfer.getData('text/plain') || draggedSitemapId;
+            if (sourceId && sourceId !== node.id && dragOverPosition) {
+              handleMoveSitemapNode(sourceId, node.id, dragOverPosition);
+            }
+            setDraggedSitemapId(null);
+            setDragOverSitemapId(null);
+            setDragOverPosition(null);
+          }}
           onClick={() => {
             if (isFolder) {
               setCollapsedFolders((prev) => ({ ...prev, [node.id]: !prev[node.id] }));
@@ -1029,26 +1241,49 @@ export default function StudioPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '7px 10px',
-            paddingInlineStart: `${10 + depth * 14}px`,
+            padding: '7px 8px',
+            paddingInlineStart: `${8 + depth * 14}px`,
             borderRadius: 'var(--radius-sm)',
-            background: isActive ? 'rgba(59, 130, 246, 0.14)' : 'transparent',
-            border: isActive ? '1px solid var(--portal-accent)' : '1px solid transparent',
-            borderInlineStart: isActive
-              ? '3px solid var(--portal-accent)'
-              : '1px solid transparent',
-            cursor: 'pointer',
+            background: dropBg,
+            boxShadow: dropBoxShadow,
+            outline: dropOutline,
+            outlineOffset: '-1px',
+            opacity: isDragged ? 0.35 : 1,
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: isActive ? 'var(--portal-accent)' : 'transparent',
+            borderInlineStartWidth: isActive ? '3px' : '1px',
+            cursor: node.isHome ? 'pointer' : 'grab',
             transition: 'all 0.15s ease',
             color: isActive ? 'var(--portal-accent)' : 'var(--portal-text-primary)',
           }}
           onMouseEnter={(e) => {
-            if (!isActive) e.currentTarget.style.background = 'var(--portal-surface-hover)';
+            if (!isActive && !isDragOver) e.currentTarget.style.background = 'var(--portal-surface-hover)';
           }}
           onMouseLeave={(e) => {
-            if (!isActive) e.currentTarget.style.background = 'transparent';
+            if (!isActive && !isDragOver) e.currentTarget.style.background = 'transparent';
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+            {/* Drag Grip Handle */}
+            {!node.isHome ? (
+              <span
+                title="Drag to reorder or nest"
+                style={{
+                  color: 'var(--portal-text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'grab',
+                  opacity: 0.5,
+                  flexShrink: 0,
+                }}
+              >
+                <GripVertical size={11} />
+              </span>
+            ) : (
+              <span style={{ width: '11px', display: 'inline-block', flexShrink: 0 }} />
+            )}
+
             {isFolder ? (
               <span
                 style={{
@@ -1915,8 +2150,74 @@ export default function StudioPage() {
                     flexDirection: 'column',
                     gap: '4px',
                   }}
+                  onDragOver={(e) => {
+                    if (draggedSitemapId) {
+                      e.preventDefault();
+                    }
+                  }}
                 >
                   {sitemapTree.map((node) => renderSitemapNode(node))}
+
+                  {/* Drop zone to move any dragged node to root / top level */}
+                  {draggedSitemapId && (
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (dragOverSitemapId !== '__root__') {
+                          setDragOverSitemapId('__root__');
+                          setDragOverPosition(null);
+                        }
+                      }}
+                      onDragLeave={(e) => {
+                        e.stopPropagation();
+                        if (dragOverSitemapId === '__root__') {
+                          setDragOverSitemapId(null);
+                        }
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const sourceId = e.dataTransfer.getData('text/plain') || draggedSitemapId;
+                        if (sourceId) {
+                          handleMoveSitemapNodeToRoot(sourceId);
+                        }
+                        setDraggedSitemapId(null);
+                        setDragOverSitemapId(null);
+                        setDragOverPosition(null);
+                      }}
+                      style={{
+                        marginTop: '8px',
+                        padding: '10px 8px',
+                        borderWidth: '1.5px',
+                        borderStyle: 'dashed',
+                        borderColor:
+                          dragOverSitemapId === '__root__'
+                            ? 'var(--portal-accent)'
+                            : 'var(--portal-border)',
+                        borderRadius: 'var(--radius-sm)',
+                        background:
+                          dragOverSitemapId === '__root__'
+                            ? 'rgba(59, 130, 246, 0.14)'
+                            : 'rgba(255, 255, 255, 0.02)',
+                        color:
+                          dragOverSitemapId === '__root__'
+                            ? 'var(--portal-accent)'
+                            : 'var(--portal-text-muted)',
+                        fontSize: '0.72rem',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'copy',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <Move size={12} />
+                      <span>Move to root level</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sitemap Footer */}
