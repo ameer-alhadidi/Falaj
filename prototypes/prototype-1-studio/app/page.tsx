@@ -10,9 +10,11 @@ import {
   SitemapNode,
   StudioPageDefinition,
 } from '../fixtures/sitemap';
+import { SitemapFlowCanvas } from './components/SitemapFlowCanvas';
 import {
   Layers,
   LayoutGrid,
+  Compass,
   Box,
   Heading,
   Type,
@@ -312,6 +314,7 @@ export default function StudioPage() {
   const [pagesRegistry, setPagesRegistry] =
     useState<Record<string, StudioPageDefinition>>(INITIAL_PAGES_REGISTRY);
   const [activePageId, setActivePageId] = useState<string>('page-managers-01');
+  const [canvasViewMode, setCanvasViewMode] = useState<'designer' | 'flow'>('flow');
   const [leftPanelTab, setLeftPanelTab] = useState<'sitemap' | 'components'>('sitemap');
   const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
   const [showNewPageModal, setShowNewPageModal] = useState<boolean>(false);
@@ -428,6 +431,140 @@ export default function StudioPage() {
     setNewPageTitle('');
     setNewPageRoute('');
     handleSelectPage(newId);
+  };
+
+  // Switch to Designer Mode and Load Selected Page Elements
+  const handleOpenPageDesigner = (pageId: string) => {
+    handleSelectPage(pageId);
+    setCanvasViewMode('designer');
+    setLeftPanelTab('components');
+  };
+
+  // Delete a Page Node from Sitemap Tree and Registry
+  const handleDeletePage = (targetPageId: string) => {
+    const isHome = sitemapTree.some((n) => n.id === targetPageId && n.isHome);
+    if (isHome) {
+      alert('The root Home page node cannot be deleted.');
+      return;
+    }
+
+    const filterNodes = (nodes: SitemapNode[]): SitemapNode[] => {
+      return nodes
+        .filter((n) => n.id !== targetPageId)
+        .map((n) => ({
+          ...n,
+          children: n.children ? filterNodes(n.children) : undefined,
+        }));
+    };
+
+    setSitemapTree((prev) => filterNodes(prev));
+    setPagesRegistry((prev) => {
+      const copy = { ...prev };
+      delete copy[targetPageId];
+      return copy;
+    });
+
+    if (activePageId === targetPageId) {
+      const fallback = sitemapTree.find((n) => n.id !== targetPageId);
+      if (fallback) {
+        handleSelectPage(fallback.id);
+      }
+    }
+  };
+
+  // Add Page Node directly from React Flow Canvas
+  const handleAddPageFromFlow = ({
+    title,
+    route,
+    parentId,
+  }: {
+    title: string;
+    route: string;
+    parentId?: string;
+  }) => {
+    const formattedRoute = route.startsWith('/')
+      ? route.trim()
+      : '/' + route.trim().toLowerCase().replace(/\s+/g, '-');
+    const newId = 'page-' + Math.random().toString(36).substring(2, 9);
+
+    const newPageDef: StudioPageDefinition = {
+      pageId: newId,
+      title: title.trim(),
+      route: formattedRoute,
+      description: `Custom layout and components for ${title.trim()}`,
+      requiredPermissions: [],
+      version: 1,
+      sectionOrder: ['header', 'form'],
+      pageNodes: [
+        {
+          id: 'node-root-container',
+          type: 'Container',
+          schemaVersion: 1,
+          layout: { colStart: 1, colSpan: 12 },
+          props: { padding: 'var(--space-6)', background: 'transparent' },
+          children: [
+            {
+              id: 'node-page-header',
+              type: 'Section',
+              schemaVersion: 1,
+              layout: { colStart: 1, colSpan: 12 },
+              props: { spacing: 'var(--space-4)' },
+              children: [
+                {
+                  id: 'node-header-title',
+                  type: 'Heading',
+                  schemaVersion: 1,
+                  layout: { colStart: 1, colSpan: 8 },
+                  props: { level: 1, text: title.trim(), align: 'start' },
+                },
+                {
+                  id: 'node-header-desc',
+                  type: 'Text',
+                  schemaVersion: 1,
+                  layout: { colStart: 1, colSpan: 8 },
+                  props: {
+                    content: `Visual canvas for ${formattedRoute}. Use the HeroUI Toolbox to drag-and-drop components.`,
+                    variant: 'muted',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      formFields: [],
+    };
+
+    const newSitemapNode: SitemapNode = {
+      id: newId,
+      title: title.trim(),
+      route: formattedRoute,
+      type: 'page',
+      status: 'draft',
+      badge: 'New',
+    };
+
+    setPagesRegistry((prev) => ({ ...prev, [newId]: newPageDef }));
+
+    if (parentId) {
+      const attachChild = (nodes: SitemapNode[]): SitemapNode[] => {
+        return nodes.map((n) => {
+          if (n.id === parentId) {
+            return {
+              ...n,
+              children: [...(n.children || []), newSitemapNode],
+            };
+          }
+          if (n.children) {
+            return { ...n, children: attachChild(n.children) };
+          }
+          return n;
+        });
+      };
+      setSitemapTree((prev) => attachChild(prev));
+    } else {
+      setSitemapTree((prev) => [...prev, newSitemapNode]);
+    }
   };
 
   // Undo/Redo Stacks
@@ -1089,8 +1226,69 @@ export default function StudioPage() {
           </div>
         </div>
 
-        {/* Center: Viewport Controls, Undo/Redo & Admin Governance */}
+        {/* Center: View Mode Toggle, Undo/Redo & Admin Governance */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          {!isPreviewMode && (
+            <div
+              style={{
+                display: 'flex',
+                background: 'var(--portal-surface-elevated)',
+                border: '1px solid var(--portal-border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '2px',
+                gap: '2px',
+              }}
+            >
+              <button
+                id="btn-viewmode-flow"
+                onClick={() => setCanvasViewMode('flow')}
+                title="Sitemap Architecture (React Flow Graph)"
+                style={{
+                  background:
+                    canvasViewMode === 'flow' ? 'var(--portal-accent)' : 'transparent',
+                  color: canvasViewMode === 'flow' ? '#fff' : 'var(--portal-text-secondary)',
+                  border: 'none',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.725rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Compass size={13} />
+                <span>Sitemap Flow</span>
+              </button>
+
+              <button
+                id="btn-viewmode-designer"
+                onClick={() => setCanvasViewMode('designer')}
+                title="Page Visual Designer (12-Column Grid Canvas)"
+                style={{
+                  background:
+                    canvasViewMode === 'designer' ? 'var(--portal-accent)' : 'transparent',
+                  color: canvasViewMode === 'designer' ? '#fff' : 'var(--portal-text-secondary)',
+                  border: 'none',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.725rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <LayoutGrid size={13} />
+                <span>Page Designer</span>
+              </button>
+            </div>
+          )}
+
           {!isPreviewMode && (
             <div
               style={{
@@ -1526,28 +1724,56 @@ export default function StudioPage() {
                     </div>
                   </div>
 
-                  <button
-                    id="btn-add-sitemap-page"
-                    type="button"
-                    onClick={() => setShowNewPageModal(true)}
-                    title="Add New Page"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      background: 'var(--portal-surface-elevated)',
-                      border: '1px solid var(--portal-border)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '4px 8px',
-                      color: 'var(--portal-accent)',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Plus size={12} />
-                    <span>New Page</span>
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <button
+                      id="btn-open-sitemap-flow"
+                      type="button"
+                      onClick={() => setCanvasViewMode('flow')}
+                      title="Open Sitemap Flow (React Flow Canvas)"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background:
+                          canvasViewMode === 'flow'
+                            ? 'var(--portal-accent)'
+                            : 'var(--portal-surface-elevated)',
+                        border: '1px solid var(--portal-border)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '4px 8px',
+                        color: canvasViewMode === 'flow' ? '#fff' : 'var(--portal-accent)',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Compass size={12} />
+                      <span>Flow</span>
+                    </button>
+
+                    <button
+                      id="btn-add-sitemap-page"
+                      type="button"
+                      onClick={() => setShowNewPageModal(true)}
+                      title="Add New Page"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'var(--portal-surface-elevated)',
+                        border: '1px solid var(--portal-border)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '4px 8px',
+                        color: 'var(--portal-text-primary)',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Plus size={12} />
+                      <span>New</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Sitemap Tree View */}
@@ -2019,20 +2245,124 @@ export default function StudioPage() {
           </aside>
         )}
 
-        {/* Center: 12-Column Visual Grid Canvas with Move Controls & Drop Zone */}
-        <main
-          style={{
-            flex: 1,
-            background: 'var(--portal-bg)',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: isPreviewMode ? '1.5rem 1rem' : '2rem 1.5rem',
-            position: 'relative',
-            transition: 'all 0.2s ease',
-          }}
-        >
+        {/* Center: 12-Column Visual Grid Canvas with Move Controls & Drop Zone OR React Flow Sitemap Canvas */}
+        {canvasViewMode === 'flow' ? (
+          <main
+            style={{
+              flex: 1,
+              background: 'var(--portal-bg)',
+              position: 'relative',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
+          >
+            <SitemapFlowCanvas
+              sitemapTree={sitemapTree}
+              pagesRegistry={pagesRegistry}
+              activePageId={activePageId}
+              onSelectPage={handleSelectPage}
+              onOpenPageDesigner={handleOpenPageDesigner}
+              onAddPage={handleAddPageFromFlow}
+              onDeletePage={handleDeletePage}
+              themeMode={themeMode}
+            />
+          </main>
+        ) : (
+          <main
+            style={{
+              flex: 1,
+              background: 'var(--portal-bg)',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: isPreviewMode ? '1.5rem 1rem' : '2rem 1.5rem',
+              position: 'relative',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {/* Breadcrumb Banner: Return to Sitemap Flow */}
+            {!isPreviewMode && (
+              <div
+                style={{
+                  width: getViewportWidth(),
+                  maxWidth: '100%',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'var(--portal-surface)',
+                  border: '1px solid var(--portal-border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '6px 12px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    id="btn-back-to-flow"
+                    onClick={() => setCanvasViewMode('flow')}
+                    style={{
+                      background: 'var(--portal-surface-elevated)',
+                      border: '1px solid var(--portal-border)',
+                      borderRadius: '4px',
+                      padding: '4px 10px',
+                      fontSize: '0.725rem',
+                      fontWeight: 600,
+                      color: 'var(--portal-accent)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                    }}
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Return to Sitemap Flow</span>
+                  </button>
+
+                  <span style={{ color: 'var(--portal-text-muted)', fontSize: '0.75rem' }}>/</span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'var(--portal-text-primary)',
+                      }}
+                    >
+                      {pagesRegistry[activePageId]?.title || activePageId}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '0.675rem',
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--portal-accent)',
+                        background: 'rgba(59, 130, 246, 0.12)',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {pagesRegistry[activePageId]?.route || ''}
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    fontSize: '0.7rem',
+                    color: 'var(--portal-text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                  }}
+                >
+                  <Sparkles size={12} style={{ color: 'var(--portal-warning)' }} />
+                  <span>Double-clicked node loaded. Drag or click elements on the left to add them here.</span>
+                </div>
+              </div>
+            )}
           {/* Viewport Simulation Frame */}
           <div
             style={{
@@ -3167,6 +3497,7 @@ export default function StudioPage() {
             </div>
           </div>
         </main>
+      )}
 
         {/* Right Inspector Panel */}
         {!isPreviewMode && (
@@ -3180,9 +3511,189 @@ export default function StudioPage() {
               overflowY: 'auto',
             }}
           >
-            <div
-              style={{ padding: '0.85rem 1rem', borderBottom: '1px solid var(--portal-border)' }}
-            >
+            {canvasViewMode === 'flow' ? (
+              <div
+                style={{
+                  padding: '1.25rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                }}
+              >
+                <div
+                  style={{
+                    paddingBottom: '0.85rem',
+                    borderBottom: '1px solid var(--portal-border)',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.675rem',
+                      color: 'var(--portal-text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      fontWeight: 700,
+                    }}
+                  >
+                    Sitemap Node Details
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '1.05rem',
+                      fontWeight: 700,
+                      color: 'var(--portal-text-primary)',
+                      marginTop: '4px',
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {pagesRegistry[activePageId]?.title || activePageId}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.75rem',
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--portal-accent)',
+                      marginTop: '4px',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      display: 'inline-block',
+                    }}
+                  >
+                    {pagesRegistry[activePageId]?.route || ''}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div
+                    style={{
+                      background: 'var(--portal-surface-elevated)',
+                      padding: '0.85rem',
+                      borderRadius: '6px',
+                      border: '1px solid var(--portal-border)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--portal-text-muted)',
+                        marginBottom: '3px',
+                      }}
+                    >
+                      Page Description
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: 'var(--portal-text-secondary)',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {pagesRegistry[activePageId]?.description || 'Custom application page.'}
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: 'var(--portal-surface-elevated)',
+                        padding: '0.75rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--portal-border)',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+                        Status
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          color: 'var(--portal-success)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        Published
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'var(--portal-surface-elevated)',
+                        padding: '0.75rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--portal-border)',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.675rem', color: 'var(--portal-text-muted)' }}>
+                        Elements
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          color: 'var(--portal-accent)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {(pagesRegistry[activePageId]?.pageNodes?.length || 0) +
+                          (pagesRegistry[activePageId]?.formFields?.length || 0)}{' '}
+                        Total
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    id="btn-inspector-open-designer"
+                    onClick={() => handleOpenPageDesigner(activePageId)}
+                    style={{
+                      background: 'var(--portal-accent)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '9px 14px',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      marginTop: '0.5rem',
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+                    }}
+                  >
+                    <span>Open Page Details & Add Elements</span>
+                    <ArrowRight size={14} />
+                  </button>
+
+                  <div
+                    style={{
+                      fontSize: '0.7rem',
+                      color: 'var(--portal-text-muted)',
+                      textAlign: 'center',
+                      lineHeight: 1.4,
+                      marginTop: '0.25rem',
+                    }}
+                  >
+                    💡 Double-click any page node in the React Flow canvas to edit its components directly.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div
+                  style={{
+                    padding: '0.85rem 1rem',
+                    borderBottom: '1px solid var(--portal-border)',
+                  }}
+                >
               <div
                 style={{
                   display: 'flex',
@@ -4916,7 +5427,9 @@ export default function StudioPage() {
                 </>
               )}
             </div>
-          </aside>
+          </div>
+        )}
+      </aside>
         )}
       </div>
 
