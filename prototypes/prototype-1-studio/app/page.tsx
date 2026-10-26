@@ -83,13 +83,52 @@ import {
   List,
   MessageSquare,
   Maximize2,
+  Menu,
+  Home,
 } from 'lucide-react';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
 type ThemeMode = 'dark' | 'light';
 type Direction = 'ltr' | 'rtl';
 type InspectorTab = 'properties' | 'grid' | 'binding' | 'permissions';
-type CanvasSectionKey = 'header' | 'form' | 'table';
+type CanvasSectionKey = 'nav' | 'header' | 'form' | 'table' | 'footer';
+
+interface BreadcrumbPathItem {
+  id: string;
+  title: string;
+  route: string;
+  isHome?: boolean;
+}
+
+// Compute full hierarchical ancestor path in sitemapTree for any page
+function getSitemapBreadcrumbPath(
+  tree: SitemapNode[],
+  targetPageId: string,
+): BreadcrumbPathItem[] {
+  const result: BreadcrumbPathItem[] = [];
+
+  function findPath(nodes: SitemapNode[], currentTrail: BreadcrumbPathItem[]): boolean {
+    for (const node of nodes) {
+      const nextTrail = [
+        ...currentTrail,
+        { id: node.id, title: node.title, route: node.route, isHome: node.isHome },
+      ];
+      if (node.id === targetPageId) {
+        result.push(...nextTrail);
+        return true;
+      }
+      if (node.children && node.children.length > 0) {
+        if (findPath(node.children, nextTrail)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  findPath(tree, []);
+  return result;
+}
 
 // Initial Seed Form Fields
 const INITIAL_FORM_FIELDS = [
@@ -235,8 +274,9 @@ export default function StudioPage() {
   const [selectedNodeId, setSelectedNodeId] = useState<string>('node-field-compliance-accordion');
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>('properties');
 
-  // Canvas Top-Level Section Order
-  const [sectionOrder, setSectionOrder] = useState<CanvasSectionKey[]>(['header', 'form', 'table']);
+  // Canvas Top-Level Section Order (Default Page Template with Slider Nav, Header, Form, Table, Footer)
+  const [sectionOrder, setSectionOrder] = useState<CanvasSectionKey[]>(['nav', 'header', 'form', 'table', 'footer']);
+  const [isNavSliderOpen, setIsNavSliderOpen] = useState<boolean>(false);
 
   // Move / Reorder States
   const [draggedFieldId, setDraggedFieldId] = useState<string | null>(null);
@@ -358,7 +398,7 @@ export default function StudioPage() {
     setActivePageId(targetPageId);
     setPageNodes(targetPage.pageNodes || []);
     setFormFields(targetPage.formFields || []);
-    setSectionOrder(targetPage.sectionOrder || ['header', 'form']);
+    setSectionOrder(targetPage.sectionOrder || ['nav', 'header', 'form', 'footer']);
 
     if (targetPage.formFields && targetPage.formFields.length > 0) {
       setSelectedNodeId(targetPage.formFields[0].id);
@@ -403,7 +443,7 @@ export default function StudioPage() {
           : `Custom layout and components for ${title.trim()}`,
       requiredPermissions: requiredRole ? [requiredRole] : [],
       version: 1,
-      sectionOrder: ['header', 'form'],
+      sectionOrder: ['nav', 'header', 'form', 'footer'],
       pageNodes: [
         {
           id: 'node-root-container',
@@ -783,7 +823,17 @@ export default function StudioPage() {
           if (parsedReg[activePageId]) {
             setPageNodes(parsedReg[activePageId].pageNodes || []);
             setFormFields(parsedReg[activePageId].formFields || []);
-            setSectionOrder(parsedReg[activePageId].sectionOrder || ['header', 'form', 'table']);
+            const savedOrder = parsedReg[activePageId].sectionOrder;
+            if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+              const hasNavOrFooter = savedOrder.includes('nav') || savedOrder.includes('footer');
+              if (!hasNavOrFooter) {
+                setSectionOrder(['nav', ...savedOrder, 'footer'] as CanvasSectionKey[]);
+              } else {
+                setSectionOrder(savedOrder);
+              }
+            } else {
+              setSectionOrder(['nav', 'header', 'form', 'table', 'footer']);
+            }
           }
         }
       }
@@ -1095,18 +1145,50 @@ export default function StudioPage() {
       setSelectedNodeId('node-header-title');
     } else if (sectionKey === 'header' && selectedNodeId === 'node-header-title') {
       setSelectedNodeId('node-manager-form');
+    } else if (sectionKey === 'nav' && selectedNodeId === 'node-slider-navigation') {
+      setSelectedNodeId('node-header-title');
+    } else if (sectionKey === 'footer' && selectedNodeId === 'node-page-footer') {
+      setSelectedNodeId('node-manager-form');
     }
+    setSaveStatus('Unsaved changes');
   };
 
   // Restore Section to Canvas
   const restoreCanvasSection = (sectionKey: CanvasSectionKey) => {
     pushUndoSnapshot();
     if (!sectionOrder.includes(sectionKey)) {
-      setSectionOrder((prev) => [...prev, sectionKey]);
+      if (sectionKey === 'nav') {
+        setSectionOrder((prev) => ['nav', ...prev]);
+      } else if (sectionKey === 'footer') {
+        setSectionOrder((prev) => [...prev, 'footer']);
+      } else if (sectionKey === 'header') {
+        setSectionOrder((prev) => {
+          const navIdx = prev.indexOf('nav');
+          if (navIdx !== -1) {
+            const copy = [...prev];
+            copy.splice(navIdx + 1, 0, 'header');
+            return copy;
+          }
+          return ['header', ...prev];
+        });
+      } else {
+        setSectionOrder((prev) => {
+          const footerIdx = prev.indexOf('footer');
+          if (footerIdx !== -1) {
+            const copy = [...prev];
+            copy.splice(footerIdx, 0, sectionKey);
+            return copy;
+          }
+          return [...prev, sectionKey];
+        });
+      }
     }
-    if (sectionKey === 'table') setSelectedNodeId('node-employee-table');
-    if (sectionKey === 'form') setSelectedNodeId('node-manager-form');
+    if (sectionKey === 'nav') setSelectedNodeId('node-slider-navigation');
     if (sectionKey === 'header') setSelectedNodeId('node-header-title');
+    if (sectionKey === 'form') setSelectedNodeId('node-manager-form');
+    if (sectionKey === 'table') setSelectedNodeId('node-employee-table');
+    if (sectionKey === 'footer') setSelectedNodeId('node-page-footer');
+    setSaveStatus('Unsaved changes');
   };
 
   // Drop Component into Form (Builder Tier)
@@ -2970,6 +3052,481 @@ export default function StudioPage() {
               }}
             >
               {sectionOrder.map((sectionKey) => {
+                // SECTION 0: SLIDER NAVIGATION (Template Default)
+                if (sectionKey === 'nav') {
+                  const sitemapRootItems = sitemapTree.slice(0, 6);
+                  return (
+                    <div
+                      key="nav"
+                      onClick={() => !isPreviewMode && setSelectedNodeId('node-slider-navigation')}
+                      style={{
+                        padding: '0.75rem',
+                        borderRadius: 'var(--radius-sm)',
+                        border:
+                          !isPreviewMode && selectedNodeId === 'node-slider-navigation'
+                            ? '2px solid var(--portal-border-active)'
+                            : '2px solid transparent',
+                        background: 'var(--portal-surface-elevated)',
+                        position: 'relative',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                      }}
+                    >
+                      {!isPreviewMode && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.5rem',
+                          }}
+                        >
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                fontFamily: 'var(--font-mono)',
+                                background: 'var(--portal-surface)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                color: 'var(--portal-text-muted)',
+                              }}
+                            >
+                              Col 1–12 (Template Default)
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--portal-accent)',
+                              }}
+                            >
+                              #node-slider-navigation
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              background: 'var(--portal-surface)',
+                              border: '1px solid var(--portal-border)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '1px 4px',
+                            }}
+                          >
+                            <span
+                              style={{ fontSize: '0.65rem', color: 'var(--portal-text-muted)' }}
+                            >
+                              Section:
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveCanvasSection('nav', 'up');
+                              }}
+                              disabled={sectionOrder.indexOf('nav') === 0}
+                              title="Move Navigation Slider Up"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color:
+                                  sectionOrder.indexOf('nav') === 0
+                                    ? 'var(--portal-text-muted)'
+                                    : 'var(--portal-accent)',
+                                cursor:
+                                  sectionOrder.indexOf('nav') === 0 ? 'not-allowed' : 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                              }}
+                            >
+                              <ChevronUp size={13} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveCanvasSection('nav', 'down');
+                              }}
+                              disabled={sectionOrder.indexOf('nav') === sectionOrder.length - 1}
+                              title="Move Navigation Slider Down"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color:
+                                  sectionOrder.indexOf('nav') === sectionOrder.length - 1
+                                    ? 'var(--portal-text-muted)'
+                                    : 'var(--portal-accent)',
+                                cursor:
+                                  sectionOrder.indexOf('nav') === sectionOrder.length - 1
+                                    ? 'not-allowed'
+                                    : 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                              }}
+                            >
+                              <ChevronDown size={13} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCanvasSection('nav');
+                              }}
+                              title="Remove Navigation Slider from Canvas"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--portal-error)',
+                                cursor: 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderInlineStart: '1px solid var(--portal-border)',
+                                marginInlineStart: '2px',
+                                paddingInlineStart: '4px',
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Main Navigation Bar */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '1rem',
+                          padding: '0.4rem 0.6rem',
+                          background: 'rgba(0, 0, 0, 0.12)',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--portal-border)',
+                        }}
+                      >
+                        {/* Left: Slider Toggle & Brand */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsNavSliderOpen(!isNavSliderOpen);
+                            }}
+                            title="Toggle Slider Navigation Drawer"
+                            style={{
+                              background: isNavSliderOpen
+                                ? 'var(--portal-accent)'
+                                : 'var(--portal-surface)',
+                              color: isNavSliderOpen ? '#fff' : 'var(--portal-text-primary)',
+                              border: '1px solid var(--portal-border)',
+                              borderRadius: '6px',
+                              padding: '5px 8px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '0.725rem',
+                              fontWeight: 600,
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <Menu size={14} />
+                            <span>Navigation Slider</span>
+                            <span
+                              style={{
+                                fontSize: '0.625rem',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                background: isNavSliderOpen
+                                  ? 'rgba(255, 255, 255, 0.25)'
+                                  : 'rgba(59, 130, 246, 0.15)',
+                                color: isNavSliderOpen ? '#fff' : 'var(--portal-accent)',
+                              }}
+                            >
+                              {sitemapTree.length}
+                            </span>
+                          </button>
+
+                          <div
+                            style={{
+                              width: '1px',
+                              height: '18px',
+                              background: 'var(--portal-border)',
+                              margin: '0 2px',
+                            }}
+                          />
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div
+                              style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '5px',
+                                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                fontWeight: 800,
+                                fontSize: '0.7rem',
+                              }}
+                            >
+                              F
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '0.775rem',
+                                fontWeight: 700,
+                                color: 'var(--portal-text-primary)',
+                              }}
+                            >
+                              Falaj Portal
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Middle: Horizontal Nav Items from Sitemap */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            overflowX: 'auto',
+                          }}
+                        >
+                          {sitemapRootItems.map((item) => {
+                            const isCurrent = item.id === activePageId;
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectPage(item.id);
+                                }}
+                                style={{
+                                  background: isCurrent
+                                    ? 'rgba(59, 130, 246, 0.15)'
+                                    : 'transparent',
+                                  border: isCurrent
+                                    ? '1px solid rgba(59, 130, 246, 0.3)'
+                                    : '1px solid transparent',
+                                  color: isCurrent
+                                    ? 'var(--portal-accent)'
+                                    : 'var(--portal-text-secondary)',
+                                  borderRadius: '4px',
+                                  padding: '4px 8px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: isCurrent ? 700 : 500,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px',
+                                  whiteSpace: 'nowrap',
+                                  transition: 'all 0.15s ease',
+                                }}
+                              >
+                                {item.isHome ? (
+                                  <Home size={12} />
+                                ) : item.type === 'folder' ? (
+                                  <Folder size={12} />
+                                ) : (
+                                  <FileText size={12} />
+                                )}
+                                <span>{item.title}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Right: Search Pill & User Profile */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              background: 'var(--portal-surface)',
+                              border: '1px solid var(--portal-border)',
+                              borderRadius: '4px',
+                              padding: '3px 8px',
+                              fontSize: '0.675rem',
+                              color: 'var(--portal-text-muted)',
+                            }}
+                          >
+                            <Search size={11} />
+                            <span>Search...</span>
+                            <kbd
+                              style={{
+                                fontSize: '0.6rem',
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                padding: '1px 3px',
+                                borderRadius: '3px',
+                              }}
+                            >
+                              ⌘K
+                            </kbd>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div
+                              style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '50%',
+                                background: 'var(--portal-accent)',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              AD
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Sliding Navigation Panel Drawer */}
+                      {isNavSliderOpen && (
+                        <div
+                          style={{
+                            marginTop: '0.6rem',
+                            padding: '0.75rem',
+                            background: 'var(--portal-surface)',
+                            border: '1px solid var(--portal-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              paddingBottom: '0.35rem',
+                              borderBottom: '1px solid var(--portal-border)',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: '0.725rem',
+                                fontWeight: 700,
+                                color: 'var(--portal-text-primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                              }}
+                            >
+                              <Compass size={13} style={{ color: 'var(--portal-accent)' }} />
+                              <span>Sitemap Navigation Slider Tray</span>
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsNavSliderOpen(false);
+                              }}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--portal-text-muted)',
+                                cursor: 'pointer',
+                                padding: '2px',
+                              }}
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                              gap: '0.5rem',
+                            }}
+                          >
+                            {sitemapTree.map((node) => {
+                              const isCurrent = node.id === activePageId;
+                              return (
+                                <div
+                                  key={node.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSelectPage(node.id);
+                                    setIsNavSliderOpen(false);
+                                  }}
+                                  style={{
+                                    padding: '0.45rem 0.6rem',
+                                    borderRadius: '4px',
+                                    border: isCurrent
+                                      ? '1px solid var(--portal-accent)'
+                                      : '1px solid var(--portal-border)',
+                                    background: isCurrent
+                                      ? 'rgba(59, 130, 246, 0.12)'
+                                      : 'var(--portal-surface-elevated)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    gap: '6px',
+                                    transition: 'all 0.15s ease',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      minWidth: 0,
+                                    }}
+                                  >
+                                    {node.isHome ? (
+                                      <Home size={13} style={{ color: 'var(--portal-accent)' }} />
+                                    ) : node.type === 'folder' ? (
+                                      <Folder size={13} style={{ color: '#f59e0b' }} />
+                                    ) : (
+                                      <FileText
+                                        size={13}
+                                        style={{ color: 'var(--portal-text-secondary)' }}
+                                      />
+                                    )}
+                                    <span
+                                      style={{
+                                        fontSize: '0.725rem',
+                                        fontWeight: isCurrent ? 700 : 500,
+                                        color: isCurrent
+                                          ? 'var(--portal-accent)'
+                                          : 'var(--portal-text-primary)',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                      }}
+                                    >
+                                      {node.title}
+                                    </span>
+                                  </div>
+                                  <span
+                                    style={{
+                                      fontSize: '0.625rem',
+                                      fontFamily: 'var(--font-mono)',
+                                      color: 'var(--portal-text-muted)',
+                                    }}
+                                  >
+                                    {node.route}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 // SECTION 1: PAGE HEADER
                 if (sectionKey === 'header') {
                   return (
@@ -3106,6 +3663,56 @@ export default function StudioPage() {
                           </div>
                         </div>
                       )}
+
+                      {/* Dynamic Sitemap Breadcrumbs Trail */}
+                      <nav
+                        aria-label="Sitemap Breadcrumb"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginBottom: '0.45rem',
+                          fontSize: '0.725rem',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        {getSitemapBreadcrumbPath(sitemapTree, activePageId).map((crumb, idx, arr) => {
+                          const isLast = idx === arr.length - 1;
+                          return (
+                            <React.Fragment key={crumb.id + '-' + idx}>
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!isLast) handleSelectPage(crumb.id);
+                                }}
+                                style={{
+                                  color: isLast ? 'var(--portal-accent)' : 'var(--portal-text-muted)',
+                                  fontWeight: isLast ? 700 : 500,
+                                  cursor: isLast ? 'default' : 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  transition: 'color 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isLast) e.currentTarget.style.color = 'var(--portal-accent)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isLast) e.currentTarget.style.color = 'var(--portal-text-muted)';
+                                }}
+                              >
+                                {crumb.isHome && <Home size={11} style={{ flexShrink: 0 }} />}
+                                <span>{crumb.title}</span>
+                              </span>
+                              {!isLast && (
+                                <span style={{ color: 'var(--portal-text-muted)', opacity: 0.5, display: 'flex' }}>
+                                  {direction === 'rtl' ? <ChevronLeft size={10} /> : <ChevronRight size={10} />}
+                                </span>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </nav>
 
                       <h1
                         style={{
@@ -3524,6 +4131,10 @@ export default function StudioPage() {
                                   isPreviewMode,
                                   liveFormValues,
                                   setLiveFormValues,
+                                  sitemapTree,
+                                  activePageId,
+                                  handleSelectPage,
+                                  direction,
                                 )}
                               </div>
                             );
@@ -3933,11 +4544,281 @@ export default function StudioPage() {
                   );
                 }
 
+                // SECTION 4: PAGE FOOTER (Template Default)
+                if (sectionKey === 'footer') {
+                  const sitemapFooterLinks = sitemapTree.slice(0, 4);
+                  return (
+                    <footer
+                      key="footer"
+                      onClick={() => !isPreviewMode && setSelectedNodeId('node-page-footer')}
+                      style={{
+                        padding: '0.75rem',
+                        borderRadius: 'var(--radius-sm)',
+                        border:
+                          !isPreviewMode && selectedNodeId === 'node-page-footer'
+                            ? '2px solid var(--portal-border-active)'
+                            : '2px solid transparent',
+                        background: 'var(--portal-surface-elevated)',
+                        position: 'relative',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                      }}
+                    >
+                      {!isPreviewMode && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '0.5rem',
+                          }}
+                        >
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                fontFamily: 'var(--font-mono)',
+                                background: 'var(--portal-surface)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                color: 'var(--portal-text-muted)',
+                              }}
+                            >
+                              Col 1–12 (Template Default)
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                fontFamily: 'var(--font-mono)',
+                                color: 'var(--portal-accent)',
+                              }}
+                            >
+                              #node-page-footer
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              background: 'var(--portal-surface)',
+                              border: '1px solid var(--portal-border)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '1px 4px',
+                            }}
+                          >
+                            <span
+                              style={{ fontSize: '0.65rem', color: 'var(--portal-text-muted)' }}
+                            >
+                              Section:
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveCanvasSection('footer', 'up');
+                              }}
+                              disabled={sectionOrder.indexOf('footer') === 0}
+                              title="Move Footer Section Up"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color:
+                                  sectionOrder.indexOf('footer') === 0
+                                    ? 'var(--portal-text-muted)'
+                                    : 'var(--portal-accent)',
+                                cursor:
+                                  sectionOrder.indexOf('footer') === 0 ? 'not-allowed' : 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                              }}
+                            >
+                              <ChevronUp size={13} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveCanvasSection('footer', 'down');
+                              }}
+                              disabled={sectionOrder.indexOf('footer') === sectionOrder.length - 1}
+                              title="Move Footer Section Down"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color:
+                                  sectionOrder.indexOf('footer') === sectionOrder.length - 1
+                                    ? 'var(--portal-text-muted)'
+                                    : 'var(--portal-accent)',
+                                cursor:
+                                  sectionOrder.indexOf('footer') === sectionOrder.length - 1
+                                    ? 'not-allowed'
+                                    : 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                              }}
+                            >
+                              <ChevronDown size={13} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCanvasSection('footer');
+                              }}
+                              title="Remove Footer Section from Canvas"
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--portal-error)',
+                                cursor: 'pointer',
+                                padding: '2px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderInlineStart: '1px solid var(--portal-border)',
+                                marginInlineStart: '2px',
+                                paddingInlineStart: '4px',
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Footer Main Body */}
+                      <div
+                        style={{
+                          borderTop: '1px solid var(--portal-border)',
+                          paddingTop: '0.75rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.6rem',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '0.75rem',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span
+                              style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: 'var(--portal-text-primary)',
+                              }}
+                            >
+                              Falaj Enterprise Visual Platform
+                            </span>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.65rem',
+                                color: '#10b981',
+                                background: 'rgba(16, 185, 129, 0.12)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontWeight: 600,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: '5px',
+                                  height: '5px',
+                                  borderRadius: '50%',
+                                  background: '#10b981',
+                                }}
+                              />
+                              <span>All Core Services Operational</span>
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              fontSize: '0.7rem',
+                              color: 'var(--portal-text-muted)',
+                            }}
+                          >
+                            {sitemapFooterLinks.map((item) => (
+                              <span
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSelectPage(item.id);
+                                }}
+                                style={{ cursor: 'pointer', transition: 'color 0.15s ease' }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.color = 'var(--portal-accent)')
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.color = 'var(--portal-text-muted)')
+                                }
+                              >
+                                {item.title}
+                              </span>
+                            ))}
+                            <span>•</span>
+                            <span
+                              style={{ cursor: 'pointer', transition: 'color 0.15s ease' }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.color = 'var(--portal-accent)')
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.color = 'var(--portal-text-muted)')
+                              }
+                            >
+                              Documentation
+                            </span>
+                            <span>•</span>
+                            <span
+                              style={{ cursor: 'pointer', transition: 'color 0.15s ease' }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.color = 'var(--portal-accent)')
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.color = 'var(--portal-text-muted)')
+                              }
+                            >
+                              Audit Registry
+                            </span>
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '0.65rem',
+                            color: 'var(--portal-text-muted)',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                            paddingTop: '0.4rem',
+                          }}
+                        >
+                          <span>
+                            © 2026 Falaj Platform. Powered by 72 HeroUI v3 accessible components.
+                          </span>
+                          <span style={{ fontFamily: 'var(--font-mono)' }}>
+                            RFC 9535 • WCAG 2.2 AA • OPA 4-Tier RBAC
+                          </span>
+                        </div>
+                      </div>
+                    </footer>
+                  );
+                }
+
                 return null;
               })}
 
               {/* Canvas Section Restore Bar if any sections were removed */}
-              {!isPreviewMode && sectionOrder.length < 3 && (
+              {!isPreviewMode && sectionOrder.length < 5 && (
                 <div
                   style={{
                     border: '1px dashed var(--portal-border)',
@@ -3957,11 +4838,11 @@ export default function StudioPage() {
                       Available canvas sections:
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    {!sectionOrder.includes('table') && (
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {!sectionOrder.includes('nav') && (
                       <button
-                        onClick={() => restoreCanvasSection('table')}
-                        title="Restore Table Component to Canvas"
+                        onClick={() => restoreCanvasSection('nav')}
+                        title="Restore Navigation Slider to Canvas"
                         style={{
                           background: 'rgba(59, 130, 246, 0.12)',
                           border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -3977,7 +4858,29 @@ export default function StudioPage() {
                         }}
                       >
                         <Plus size={13} />
-                        <span>Restore Table Component</span>
+                        <span>Restore Navigation Slider</span>
+                      </button>
+                    )}
+                    {!sectionOrder.includes('header') && (
+                      <button
+                        onClick={() => restoreCanvasSection('header')}
+                        title="Restore Header Section to Canvas"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: 'var(--portal-accent)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.725rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>Restore Header Section</span>
                       </button>
                     )}
                     {!sectionOrder.includes('form') && (
@@ -4002,10 +4905,10 @@ export default function StudioPage() {
                         <span>Restore Form Section</span>
                       </button>
                     )}
-                    {!sectionOrder.includes('header') && (
+                    {!sectionOrder.includes('table') && (
                       <button
-                        onClick={() => restoreCanvasSection('header')}
-                        title="Restore Header Section to Canvas"
+                        onClick={() => restoreCanvasSection('table')}
+                        title="Restore Table Component to Canvas"
                         style={{
                           background: 'rgba(59, 130, 246, 0.12)',
                           border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -4021,7 +4924,29 @@ export default function StudioPage() {
                         }}
                       >
                         <Plus size={13} />
-                        <span>Restore Header Section</span>
+                        <span>Restore Table Component</span>
+                      </button>
+                    )}
+                    {!sectionOrder.includes('footer') && (
+                      <button
+                        onClick={() => restoreCanvasSection('footer')}
+                        title="Restore Footer Section to Canvas"
+                        style={{
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.3)',
+                          color: 'var(--portal-accent)',
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.725rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                        }}
+                      >
+                        <Plus size={13} />
+                        <span>Restore Footer Section</span>
                       </button>
                     )}
                   </div>
@@ -6822,6 +7747,10 @@ function renderHeroUIComponent(
   isPreviewMode: boolean,
   liveFormValues: Record<string, any>,
   setLiveFormValues: React.Dispatch<React.SetStateAction<Record<string, any>>>,
+  sitemapTree?: SitemapNode[],
+  activePageId?: string,
+  onSelectPage?: (pageId: string) => void,
+  dir?: 'ltr' | 'rtl',
 ) {
   const currentValue = liveFormValues[field.id];
 
@@ -8824,16 +9753,99 @@ function renderHeroUIComponent(
     );
   }
 
-  // 25. Breadcrumbs
+  // 25. Breadcrumbs (Reflects Sitemap Tree Path dynamically)
   if (field.type === 'Breadcrumbs') {
+    const breadcrumbTrail =
+      sitemapTree && activePageId
+        ? getSitemapBreadcrumbPath(sitemapTree, activePageId)
+        : [];
+
+    const items: Array<{ id: string; title: string; route: string; isHome?: boolean }> =
+      breadcrumbTrail.length > 0
+        ? breadcrumbTrail
+        : Array.isArray(field.props.items) && field.props.items.length > 0
+          ? field.props.items.map((it: string, i: number) => ({
+              id: 'custom-' + i,
+              title: it,
+              route: '',
+            }))
+          : [
+              {
+                id: activePageId || 'page-root',
+                title: 'Portal',
+                route: '/',
+                isHome: true,
+              },
+            ];
+
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.725rem' }}>
-        <span style={{ color: 'var(--portal-text-muted)' }}>Portal</span>
-        <ChevronRight size={11} style={{ color: 'var(--portal-text-muted)' }} />
-        <span style={{ color: 'var(--portal-text-muted)' }}>Employees</span>
-        <ChevronRight size={11} style={{ color: 'var(--portal-text-muted)' }} />
-        <span style={{ color: 'var(--portal-accent)', fontWeight: 600 }}>Registration Form</span>
-      </div>
+      <nav
+        aria-label="Breadcrumbs"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '6px',
+          fontSize: '0.75rem',
+          padding: '4px 8px',
+          background: 'var(--portal-surface-elevated)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--portal-border)',
+          width: 'fit-content',
+        }}
+      >
+        {items.map((crumb, idx) => {
+          const isLast = idx === items.length - 1;
+          return (
+            <React.Fragment key={crumb.id + '-' + idx}>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isLast && onSelectPage && crumb.id && !crumb.id.startsWith('custom-')) {
+                    onSelectPage(crumb.id);
+                  }
+                }}
+                style={{
+                  color: isLast ? 'var(--portal-accent)' : 'var(--portal-text-muted)',
+                  fontWeight: isLast ? 700 : 500,
+                  cursor:
+                    !isLast && crumb.id && !crumb.id.startsWith('custom-')
+                      ? 'pointer'
+                      : 'default',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'color 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLast && crumb.id && !crumb.id.startsWith('custom-')) {
+                    e.currentTarget.style.color = 'var(--portal-accent)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLast && crumb.id && !crumb.id.startsWith('custom-')) {
+                    e.currentTarget.style.color = 'var(--portal-text-muted)';
+                  }
+                }}
+              >
+                {crumb.isHome && <Home size={12} style={{ flexShrink: 0 }} />}
+                <span>{crumb.title}</span>
+              </span>
+              {!isLast && (
+                <span
+                  style={{
+                    color: 'var(--portal-text-muted)',
+                    opacity: 0.5,
+                    display: 'flex',
+                  }}
+                >
+                  {dir === 'rtl' ? <ChevronLeft size={11} /> : <ChevronRight size={11} />}
+                </span>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </nav>
     );
   }
 

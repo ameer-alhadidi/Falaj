@@ -17,7 +17,7 @@ export interface StudioPageDefinition {
   description: string;
   requiredPermissions: string[];
   version: number;
-  sectionOrder: ('header' | 'form' | 'table')[];
+  sectionOrder: ('nav' | 'header' | 'form' | 'table' | 'footer')[];
   pageNodes: any[];
   formFields: any[];
 }
@@ -87,7 +87,7 @@ export const INITIAL_PAGES_REGISTRY: Record<string, StudioPageDefinition> = {
       'Live enterprise personnel synchronized via Upstream Core HR Broker. Demonstrates 12-column grid and RFC 9535 data binding.',
     requiredPermissions: ['managers.read'],
     version: 1,
-    sectionOrder: ['header', 'form', 'table'],
+    sectionOrder: ['nav', 'header', 'form', 'table', 'footer'],
     pageNodes: [
       {
         id: 'node-root-container',
@@ -299,7 +299,7 @@ export const INITIAL_PAGES_REGISTRY: Record<string, StudioPageDefinition> = {
       'Standardized corporate intake workflow with identity verification, hardware provisioning, and automated NDA signing.',
     requiredPermissions: ['hr.write'],
     version: 1,
-    sectionOrder: ['header', 'form'],
+    sectionOrder: ['nav', 'header', 'form', 'footer'],
     pageNodes: [
       {
         id: 'node-root-container',
@@ -435,7 +435,7 @@ export const INITIAL_PAGES_REGISTRY: Record<string, StudioPageDefinition> = {
       'Enterprise security governance portal. Central repository of mandatory operational standards, encryption policies, and GDPR audit certifications.',
     requiredPermissions: ['security.audit'],
     version: 1,
-    sectionOrder: ['header', 'form'],
+    sectionOrder: ['nav', 'header', 'form', 'footer'],
     pageNodes: [
       {
         id: 'node-root-container',
@@ -543,7 +543,7 @@ export const INITIAL_PAGES_REGISTRY: Record<string, StudioPageDefinition> = {
       'Granular role-based access control policies defined across 4 permission tiers with automated least-privilege enforcement.',
     requiredPermissions: ['admin'],
     version: 1,
-    sectionOrder: ['header', 'form'],
+    sectionOrder: ['nav', 'header', 'form', 'footer'],
     pageNodes: [
       {
         id: 'node-root-container',
